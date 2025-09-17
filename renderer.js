@@ -135,10 +135,6 @@ if (!savedName) {
   if (state.page) {
     switch (state.page) {
         case "myCornerPanel":
-        showMainLearningScreen(last);
-        openMyCornerPanel();
-        return;
-        case "myCornerPanel":
         openMyCornerPanel();
         return;
       case "mainLearning":
@@ -334,7 +330,7 @@ const myCornerBtn = tabBarWrapper.querySelector(".my-corner");
 if (myCornerBtn) {
   myCornerBtn.addEventListener("click", () => {
     const prevTab = (loadAppState().tab) || "Home"; // 현재 탭 기억
-    saveAppState("myCornerPanel", { lastTab });
+    saveAppState("myCornerPanel", { lastTab: prevTab });
     openMyCornerPanel(); // 같은 프레임에 패널 렌더
   });
 }
