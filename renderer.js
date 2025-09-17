@@ -27,23 +27,25 @@ window.addEventListener("load", () => {
   gisInited = true;
 });
 
-async function ensureDriveAuth() {
-  if (!gapiInited || !gisInited) throw new Error("Google APIs not ready yet");
-  if (!gapi.client.getToken()) {
+async function ensureDriveAuth(forceConsent = false) {
+  if (!gapiInited || !gisInited) throw new Error("Google APIs not ready");
+  const token = gapi.client.getToken();
+  if (!token || forceConsent) {
     await new Promise((resolve, reject) => {
-      googleTokenClient.callback = (resp) => resp.error ? reject(resp) : resolve(resp);
-      googleTokenClient.requestAccessToken();
+      googleTokenClient.callback = (resp) => resp?.error ? reject(resp) : resolve(resp);
+      googleTokenClient.requestAccessToken({ prompt: "consent" });
     });
+    driveFileId = null; // ★ 계정/스코프 바뀌면 다시 찾게
   }
 }
 
 async function ensureCozyFile() {
   if (driveFileId) return driveFileId;
   await ensureDriveAuth();
-  const listRes = await gapi.client.drive.files.list({
-    spaces: "appDataFolder",
-    q: "name = 'cozy-korean.json' and trashed = false",
-    fields: "files(id,name)"
+  const list = await gapi.client.drive.files.list({
+  spaces: "appDataFolder",
+  q: "name = 'cozy-korean.json' and trashed = false",
+  fields: "files(id,name)"
   });
   if (listRes.result.files?.length) {
     driveFileId = listRes.result.files[0].id;
@@ -59,33 +61,57 @@ async function ensureCozyFile() {
 }
 
 async function driveSaveState(stateObj) {
-  const fileId = await ensureCozyFile();
   await ensureDriveAuth();
-  await gapi.client.request({
-    path: `/upload/drive/v3/files/${fileId}`,
-    method: "PATCH",
-    params: { uploadType: "media" },
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(stateObj)
-  });
-  return true;
+  if (!driveFileId) await ensureCozyFile();
+
+  try {
+    return await gapi.client.request({
+      path: `/upload/drive/v3/files/${driveFileId}`,
+      method: "PATCH",
+      params: { uploadType: "media" },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(stateObj)
+    });
+  } catch (e) {
+    // ★ 권한/소유 안 맞을 때 재생성 후 1회 재시도
+    const msg = (e?.result?.error?.message || e?.status || "").toString().toLowerCase();
+    if (msg.includes("insufficient") || msg.includes("forbidden") || e.status === 403 || e.status === 404) {
+      driveFileId = null;
+      await ensureCozyFile(); // appDataFolder에 새로 만듦
+      return await gapi.client.request({
+        path: `/upload/drive/v3/files/${driveFileId}`,
+        method: "PATCH",
+        params: { uploadType: "media" },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stateObj)
+      });
+    }
+    throw e;
+  }
 }
 
 async function driveLoadState() {
-  const fileId = await ensureCozyFile();
   await ensureDriveAuth();
-  const res = await gapi.client.drive.files.get({ fileId, alt: "media" });
-  const data = typeof res.body === "string" ? JSON.parse(res.body) : (res.result || res);
-  return data || {};
+  if (!driveFileId) await ensureCozyFile();
+  try {
+    const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: "media" });
+    return typeof res.body === "string" ? JSON.parse(res.body) : (res.result || {});
+  } catch (e) {
+    if (e.status === 403 || e.status === 404) {
+      driveFileId = null;
+      await ensureCozyFile();
+      const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: "media" });
+      return typeof res.body === "string" ? JSON.parse(res.body) : (res.result || {});
+    }
+    throw e;
+  }
 }
 
 function driveSignOut() {
-  const token = gapi.client.getToken();
-  if (token) {
-    google.accounts.oauth2.revoke(token.access_token);
-    gapi.client.setToken("");
-  }
-  driveFileId = null;
+  const t = gapi.client.getToken();
+  if (t) google.accounts.oauth2.revoke(t.access_token);
+  gapi.client.setToken("");
+  driveFileId = null; // ★ 캐시된 파일ID 버리기
 }
 
 // 메인탭 active 표시용
