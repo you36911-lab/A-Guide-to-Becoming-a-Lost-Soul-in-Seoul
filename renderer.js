@@ -259,8 +259,8 @@ function showMainAppScreen() {
     <h2 class="welcome">Welcome, ${name}!</h2>
     <p class="description">You're currently studying at <strong>Level ${level}</strong>.</p>
     <div class="buttons" style="margin-top: 4rem;">
-      <button class="btn">Start Learning</button>
-      <button class="btn secondary change-level">Change Level</button>
+      <button class="btn wb">Start Learning</button>
+      <button class="btn secondary change-level wb">Change Level</button>
     </div>
   `;
 
