@@ -95,7 +95,6 @@ function setActiveTabUI(containerEl, activeTab) {
   });
 }
 
-// renderer.js 최상단 DOMContentLoaded 근처에 추가
 if (navigator.storage && navigator.storage.persist) {
   navigator.storage.persist().then(granted => {
     console.log(granted ? "Persistent storage granted" : "Persistent storage not granted");
@@ -106,6 +105,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // 기존 로컬스토리지 데이터 읽기
   const savedName = localStorage.getItem("username");
   const savedLevel = localStorage.getItem("level");
+  const state = loadAppState(); // ★ 먼저 상태 읽기
+
+    // A) ★ 최우선: My Corner 패널 복원 (새 세션이어도 이게 우선)
+  if (state?.page === "myCornerPanel") {
+    const last = state.lastTab || "Home";
+    showMainLearningScreen(last); // 먼저 레이아웃 생성
+    openMyCornerPanel();          // 같은 프레임에 패널 오픈
+    return;
+  }
 
   // 첫 방문: 로컬에 이름이 없으면 곧바로 이름 입력 화면으로
 if (!savedName) {
@@ -130,13 +138,9 @@ if (!savedName) {
     return; // ← 중요: 복원 로직으로 내려가지 않게
   }
 
-  const state = loadAppState();
   // 1) 상태가 있으면 우선 복원
   if (state.page) {
     switch (state.page) {
-        case "myCornerPanel":
-        openMyCornerPanel();
-        return;
       case "mainLearning":
         showMainLearningScreen((state.tab || "Home"));
         return;
@@ -258,7 +262,7 @@ function showMainAppScreen() {
   frameBox.innerHTML = `
     <h2 class="welcome">Welcome, ${name}!</h2>
     <p class="description">You're currently studying at <strong>Level ${level}</strong>.</p>
-    <div class="buttons" style="margin-top: 4rem;">
+    <div class="buttons">
       <button class="btn wb">Start Learning</button>
       <button class="btn secondary change-level wb">Change Level</button>
     </div>
