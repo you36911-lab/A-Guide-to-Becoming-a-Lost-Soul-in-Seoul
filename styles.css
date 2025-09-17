@@ -477,6 +477,10 @@ input[type="text"] {
   animation: welcomeFadeIn 1s ease-out forwards;
 }
 
+.wb {
+    margin-top: 3rem;
+}
+
 .ko-first {
   font-size: 1.05rem;
   font-weight: 600;
