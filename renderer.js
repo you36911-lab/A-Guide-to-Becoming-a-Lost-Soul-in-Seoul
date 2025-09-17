@@ -2,7 +2,7 @@ const isNewSession = !sessionStorage.getItem("sessionInit");
 if (isNewSession) sessionStorage.setItem("sessionInit", "1");
 
 /************ Google Drive Sync (appDataFolder) ************/
-const GDRIVE_CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com"; // ← 교체
+const GDRIVE_CLIENT_ID = "675841428134-bdjtlimn587qqgdaiev0pk9a1m42lt9h.apps.googleusercontent.com"; // ← 교체
 const GDRIVE_SCOPES = "https://www.googleapis.com/auth/drive.appdata";
 let googleTokenClient = null;
 let gapiInited = false;
@@ -802,11 +802,7 @@ function openMyCornerPanel() {
     <div class="buttons" style="margin-top:1rem;">
       <button class="btn" id="driveSave">Save to Google Drive</button>
       <button class="btn secondary" id="driveLoad">Load from Google Drive</button>
-      <button class="btn" id="driveDisconnect">Disconnect Google</button>
-    </div>
-
-    <div style="margin-top:1.2rem;">
-      <button class="btn secondary" id="backToHome">Back to ${ (loadAppState().tab || "Home") }</button>
+      <button class="btn" id="driveDisconnect">Disconnect</button>
     </div>
   `;
 
