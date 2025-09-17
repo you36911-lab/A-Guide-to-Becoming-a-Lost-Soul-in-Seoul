@@ -134,6 +134,10 @@ if (!savedName) {
   // 1) 상태가 있으면 우선 복원
   if (state.page) {
     switch (state.page) {
+        case "myCornerPanel":
+        showMainLearningScreen(last);
+        openMyCornerPanel();
+        return;
       case "mainLearning":
         showMainLearningScreen((state.tab || "Home"));
         return;
@@ -326,9 +330,9 @@ function showMainLearningScreen(initialTab = "Home") {
 const myCornerBtn = tabBarWrapper.querySelector(".my-corner");
 if (myCornerBtn) {
   myCornerBtn.addEventListener("click", () => {
-    // 탭 active 유지(선택) or 해제하고 별도 상태로 가도 OK
-    saveAppState("mainLearning", { tab: "My Corner" });
-    openMyCornerPanel();
+    const prevTab = (loadAppState().tab) || "Home"; // 현재 탭 기억
+    saveAppState("myCornerPanel", { lastTab: prevTab });
+    openMyCornerPanel(); // 같은 프레임에 패널 렌더
   });
 }
 
