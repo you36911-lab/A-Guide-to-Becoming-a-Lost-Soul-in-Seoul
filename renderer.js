@@ -341,6 +341,10 @@ function updateTabContent(tab) {
   saveAppState("mainLearning", { tab });
   const state = loadAppState();
   const tabContent = document.getElementById("tabContent");
+  if (tab === "My Corner") {
+    openMyCornerPanel();
+    return;
+   }
   const level = localStorage.getItem("level");
   const username = localStorage.getItem("username");
   const weeklyMessage = "📣 Weekly News: You can now unlock Cozy Study Corner items with quiz streaks!";
