@@ -11,7 +11,9 @@ let driveFileId = null; // cozy-korean.json fileId
 
 window.addEventListener("load", () => {
   gapi.load("client", async () => {
-    await gapi.client.init({});
+    await gapi.client.init({
+  discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
+});
     await gapi.client.load("drive", "v3");
     gapiInited = true;
   });
