@@ -387,7 +387,7 @@ function updateTabContent(tab) {
     tabContent.innerHTML = `
       <div class="main-header-flex">
         <div class="level-indicator">Level ${localStorage.getItem("level")}</div>
-        <h2 class="hi">{ <span class="korean ko-first">반가워요</span>, ${username}! }</h2>
+        <h2 class="hi">{ <span class='korean ko-first'>반가워요</span>, ${username}! }</h2>
       </div>
       <p class="cheer-message">${randomMessage}</p>
       <div class="weekly-banner">${weeklyMessage}</div>
