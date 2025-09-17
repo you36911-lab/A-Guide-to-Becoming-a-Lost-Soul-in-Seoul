@@ -135,7 +135,6 @@ if (!savedName) {
   if (state.page) {
     switch (state.page) {
         case "myCornerPanel":
-        showMainLearningScreen(last);
         openMyCornerPanel();
         return;
       case "mainLearning":
