@@ -253,7 +253,7 @@ input[type="text"] {
   background-color: #ffe3e3;
   border: 2px solid #c5aaa7;
   border-bottom: none;  /* 탭처럼 아래가 붙어있는 느낌 */
-  padding: 0.5rem 1.2rem 3rem;
+  padding: 0.5rem 0.8rem 3rem;
   font-family: 'VT323', monospace;
   cursor: pointer;
   margin-right: -1px; /* 탭 간격 없애기 */
@@ -264,6 +264,10 @@ input[type="text"] {
   z-index: 3;
   transition: transform 0.2s ease, z-index 0.2s;
   position: relative;
+  flex: 0 1 auto;       /* 크기 자동으로 줄어듦 */
+  min-width: 4.5rem;      /* 최소 너비 지정해서 안 무너지게 */
+  text-align: center;
+  white-space: nowrap;
 }
 
 .tab.active {
@@ -410,9 +414,9 @@ input[type="text"] {
 .tab-group {
   display: flex;
   flex-grow: 1;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   width: 95%;
-  gap: 0.5rem;
+  gap: 0.15rem;
   flex-shrink: 1;
 }
 
