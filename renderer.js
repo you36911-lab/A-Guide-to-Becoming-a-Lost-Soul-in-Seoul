@@ -549,8 +549,8 @@ function showMembershipPaymentPage() {
   document.getElementById("payWithPaypal").addEventListener("click", () => {
     const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
     const paypalURL = selectedPlan === "monthly"
-      ? "https://www.paypal.com/paypalme/SoohyunShim83/4.99"
-      : "https://www.paypal.com/paypalme/SoohyunShim83/39.99";
+      ? ""
+      : "";
 
     window.open(paypalURL, "_blank");
   });
