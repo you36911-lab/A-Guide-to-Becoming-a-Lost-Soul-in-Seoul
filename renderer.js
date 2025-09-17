@@ -804,7 +804,7 @@ function openMyCornerPanel() {
 
     <div class="buttons" style="margin-top:1rem;">
       <button class="btn" id="driveSave">Save to Google Drive</button>
-      <button class="btn secondary" id="driveLoad">Load from Google Drive</button>
+      <button class="btn" id="driveLoad">Load from Google Drive</button>
       <button class="btn" id="driveDisconnect">Disconnect</button>
     </div>
   `;
