@@ -131,6 +131,14 @@ if (!savedName) {
   }
 
   const state = loadAppState();
+  if (state.page === "myCornerPanel") {
+  // 메인 학습 화면(탭바/프레임) 먼저 그린 뒤
+  const last = state.lastTab || "Home";
+  showMainLearningScreen(last);
+  // 프레임이 생겼으니 이제 패널을 같은 프레임에 오픈
+  openMyCornerPanel();
+  return;
+}
   // 1) 상태가 있으면 우선 복원
   if (state.page) {
     switch (state.page) {
