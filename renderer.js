@@ -827,8 +827,8 @@ function openMyCornerPanel() {
       await driveSaveState(payload);
       alert("Saved successfully!");
     } catch (e) {
-      console.error(e);
-      alert("Failed to save due to an error!");
+      console.error("Drive error:", e);
+      alert("Failed: " + explainError(e));
     }
   });
 
@@ -845,10 +845,21 @@ function openMyCornerPanel() {
       if (name) return showLevelSelection();
       return renderNameInput();
     } catch (e) {
-      console.error(e);
-      alert("Failed to load due to an error!");
+      console.error("Drive error:", e);
+      alert("Failed: " + explainError(e));
     }
   });
+
+  function explainError(e) {
+  try {
+    if (e?.result?.error?.message) return e.result.error.message;
+    if (e?.result?.error?.errors?.[0]?.reason) return e.result.error.errors[0].reason;
+    if (e?.body) { const j = JSON.parse(e.body); return j?.error?.message || e.toString(); }
+    if (e?.error_description) return e.error_description;
+    if (e?.error) return e.error;
+    return e?.toString?.() || "Unknown error";
+  } catch { return "Unknown error"; }
+}
 
   document.getElementById("driveDisconnect")?.addEventListener("click", () => {
     driveSignOut();
