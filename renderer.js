@@ -34,6 +34,7 @@ async function ensureDriveAuth(forceConsent = false) {
     await new Promise((resolve, reject) => {
       googleTokenClient.callback = (resp) => resp?.error ? reject(resp) : resolve(resp);
       googleTokenClient.requestAccessToken({ prompt: "consent" });
+      driveFileId = null; // ★ 계정/스코프 바뀌면 다시 찾게
     });
     driveFileId = null; // ★ 계정/스코프 바뀌면 다시 찾게
   }
@@ -47,16 +48,27 @@ async function ensureCozyFile() {
   q: "name = 'cozy-korean.json' and trashed = false",
   fields: "files(id,name)"
   });
-  if (listRes.result.files?.length) {
-    driveFileId = listRes.result.files[0].id;
+  if (list.result.files?.length) {
+    driveFileId = list.result.files[0].id;
     return driveFileId;
   }
-  const createRes = await gapi.client.drive.files.create({
-    resource: { name: "cozy-korean.json", parents: ["appDataFolder"] },
-    media: { mimeType: "application/json", body: JSON.stringify({ createdAt: new Date().toISOString() }) },
-    fields: "id"
+  const boundary = "foo_bar_baz";
+  const metadata = { name: "cozy-korean.json", parents: ["appDataFolder"] };
+  const data = { createdAt: new Date().toISOString() };
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+    JSON.stringify(metadata) +
+    `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n` +   
+    JSON.stringify(data) + 
+    `\r\n--${boundary}--`;
+  const createRes = await gapi.client.request({
+    path: "/upload/drive/v3/files",
+    method: "POST",
+    params: { uploadType: "multipart" },
+    headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+    body
   });
-  driveFileId = createRes.result.id;
+  driveFileId = createRes.result?.id || (createRes.body && JSON.parse(createRes.body).id);
   return driveFileId;
 }
 
@@ -844,6 +856,7 @@ function openMyCornerPanel() {
   // 핸들러들
   document.getElementById("driveSave")?.addEventListener("click", async () => {
     try {
+      await ensureDriveAuth(true);
       const payload = {
         username: localStorage.getItem("username"),
         level: localStorage.getItem("level"),
@@ -860,6 +873,7 @@ function openMyCornerPanel() {
 
   document.getElementById("driveLoad")?.addEventListener("click", async () => {
     try {
+      await ensureDriveAuth(true);
       const data = await driveLoadState();
       if (data.username) localStorage.setItem("username", data.username);
       if (data.level) localStorage.setItem("level", data.level);
