@@ -287,6 +287,18 @@ function renderNameInput() {
       localStorage.setItem("firstVisit", "true");
       showLevelSelection();
     }
+
+  document.getElementById("startBtn").addEventListener("click", () => {
+    const username = nameInput.value.trim();
+    if (!username) {
+      alert("Please enter your name!");
+    } else {
+      localStorage.setItem("username", username);
+      applyGlobalKoreanFontIfNeeded();
+      localStorage.setItem("firstVisit", "true");
+      showLevelSelection();
+    }
+  });
   });
 
   document.getElementById("joinBtn").addEventListener("click", showMembershipPage);
@@ -301,13 +313,16 @@ function showLevelSelection() {
 
   frameBox.innerHTML = `
     <h2 class="choose-level">Choose Your Level</h2>
-    <p class="description">Hi ${username}! Let's begin where you're comfortable.</p>
+    <p class="description">Hi <span class="user-name">${username}</span>! Let's begin where you're comfortable.</p>
     <div class="level-buttons">
       ${["A0", "A1", "A2", "B1", "B2", "C1"].map(level => `<button class="btn level">${level}</button>`).join("")}
     </div>
     <p class="beginner">Please choose A0 if you're a complete beginner without any Korean knowledge.</p>
     <button class="btn test">Would you like to take a placement test?</button>
   `;
+
+const nameEl1 = frameBox.querySelector(".user-name");
+if (nameEl1 && isKoreanName(username)) nameEl1.classList.add("ko");
 
   document.querySelectorAll(".btn.level").forEach(button => {
     button.addEventListener("click", () => {
@@ -326,13 +341,16 @@ function showMainAppScreen() {
   const level = localStorage.getItem("level");
 
   frameBox.innerHTML = `
-    <h2 class="welcome wlc">Welcome, ${name}!</h2>
+    <h2 class="welcome wlc">Welcome, <span class="user-name funny">${name}</span>!</h2>
     <p class="description">You're currently studying at <strong>Level ${level}</strong>.</p>
     <div class="buttons">
       <button class="btn wb">Start Learning</button>
       <button class="btn secondary change-level wb">Change Level</button>
     </div>
   `;
+
+  const nameEl2 = frameBox.querySelector(".user-name");
+if (nameEl2 && isKoreanName(name)) nameEl2.classList.add("ko");
 
   document.querySelector(".btn").addEventListener("click", () => showMainLearningScreen("Home"));
   document.querySelector(".change-level").addEventListener("click", () => {
@@ -462,11 +480,15 @@ function updateTabContent(tab) {
     tabContent.innerHTML = `
       <div class="main-header-flex">
         <div class="level-indicator">Level ${localStorage.getItem("level")}</div>
-        <h2 class="hi">{ <span class='korean ko-first'>반가워요</span>, ${username}! }</h2>
+        <h2 class="hi">{ <span class='korean ko-first'>반가워요</span>, <span class="user-name funny">${username}</span>! }</h2>
       </div>
       <p class="cheer-message">${randomMessage}</p>
       <div class="weekly-banner">${weeklyMessage}</div>
     `;
+    
+    const nameEl3 = tabContent.querySelector(".user-name");
+if (nameEl3 && isKoreanName(username)) nameEl3.classList.add("ko");
+
   } else if (["Reading", "Listening", "Writing", "Speaking"].includes(tab)) {
     tabContent.innerHTML = `
       <div class="learning-frame" style="display: flex; gap: 2rem;">
@@ -984,7 +1006,7 @@ function openMyCornerPanel() {
   tabContent.innerHTML = `
     <div class="main-header-flex">
       <button class="btn change-level mls-change">Change Level</button>
-      <h2 class="hi hi-crn">✨<span class="scrn">🧸${localStorage.getItem("username")}'s Corner🍵</span>✨</h2>
+      <h2 class="hi hi-crn">✨<span class="scrn">🧸<span class="user-name" id="cornerName">${localStorage.getItem("username")}</span>'s Corner🍵</span>✨</h2>
     </div>
 
     <div class="level-overlay hidden" id="levelOverlay">
@@ -1044,6 +1066,10 @@ function openMyCornerPanel() {
     </div>
     </div>
   `;
+
+const cornerNameEl = tabContent.querySelector("#cornerName");
+  const nm = localStorage.getItem("username") || "";
+  if (cornerNameEl && isKoreanName(nm)) cornerNameEl.classList.add("ko");
 
 // 이벤트 바인딩
   tabContent.querySelector(".change-level").addEventListener("click", () => {

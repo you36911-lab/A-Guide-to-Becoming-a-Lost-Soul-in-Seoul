@@ -363,7 +363,7 @@ input[type="text"] {
 }
 
 .korean {
-  font-family: "PfStardust", sans-serif;
+  font-family: "PfStardust", sans-serif !important;
 }
 
 @font-face {
@@ -507,7 +507,7 @@ input[type="text"] {
 
 .ko-first {
   font-size: 1.05rem;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .butterfly-wrapper {
@@ -838,10 +838,18 @@ input[type="text"] {
   margin-top: 4rem;
 }
 
-/* 이름이 한글일 때 전역 폰트 강제 적용 */
-.korean-global,
-.korean-global * {
+/* Username-specific font switching */
+.user-name.ko { 
   font-family: 'PfStardust', sans-serif !important;
+}
+
+/* 타이틀 페이지 입력창에서 한글 입력 시 */
+input#username.ko {
+  font-family: 'PfStardust', sans-serif !important;
+}
+
+.funny {
+  font-weight: bold;
 }
 
 .diary-customizer { margin-top: 2rem; }
