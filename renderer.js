@@ -326,7 +326,7 @@ function showMainAppScreen() {
   const level = localStorage.getItem("level");
 
   frameBox.innerHTML = `
-    <h2 class="welcome">Welcome, ${name}!</h2>
+    <h2 class="welcome wlc">Welcome, ${name}!</h2>
     <p class="description">You're currently studying at <strong>Level ${level}</strong>.</p>
     <div class="buttons">
       <button class="btn wb">Start Learning</button>
@@ -983,7 +983,7 @@ function openMyCornerPanel() {
 
   tabContent.innerHTML = `
     <div class="main-header-flex">
-      <button class="btn change-level">Change Level</button>
+      <button class="btn change-level mls-change">Change Level</button>
       <h2 class="hi hi-crn">✨<span class="scrn">🧸${localStorage.getItem("username")}'s Corner🍵</span>✨</h2>
     </div>
 

@@ -802,7 +802,7 @@ input[type="text"] {
 }
 
 .choose-level {
-  margin-top: 3.5rem;
+  margin-top: 4.3rem;
 }
 
 #startPlacementBtn {
@@ -1159,7 +1159,7 @@ input[type="text"] {
   margin: 0.5rem;
 }
 
-.change-level {
+.mls-change {
   align-self: flex-start;
   background: linear-gradient(to bottom, #fff3e7, #fde7d9);
   border: 2px solid #d4b1a6;
@@ -1172,9 +1172,13 @@ input[type="text"] {
   position: absolute;
 }
 
-.change-level:hover {
+.mls-change:hover {
   background: #fde7d9;
   cursor: pointer;
   transform: scale(1.05);
   transition: transform 0.2s;
+}
+
+.wlc {
+  margin-top: 7.7rem;
 }
