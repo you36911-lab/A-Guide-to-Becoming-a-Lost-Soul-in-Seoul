@@ -270,12 +270,23 @@ function renderNameInput() {
     <h2>A Guide<br>to Becoming<br>a Lost Soul in Seoul</h2>
     <p class="description">Welcome, wanderer. This app is your cozy guide to learning Korean.</p>
     <input type="text" id="username" name="username" placeholder="Enter your name" />
-    <div class="buttons">
+    <div class="buttons str-btns">
       <button class="btn" id="startBtn">Start Learning</button>
       <button class="btn secondary" id="joinBtn">Join Our Secret Society</button>
     </div>
     <p class="credit">Made by Sooya with 💖</p>
   `;
+
+  // ✅ 여기! 클릭 핸들러 바깥에서 세팅
+  const nameInput = document.getElementById("username");
+  const applyInputFont = () => {
+    nameInput.classList.toggle("ko", isKoreanName(nameInput.value));
+  };
+  applyInputFont();
+  // IME(한글 조합)까지 커버
+  nameInput.addEventListener("input", applyInputFont);
+  nameInput.addEventListener("compositionend", applyInputFont);
+  nameInput.addEventListener("keyup", applyInputFont); // 안전망
 
   document.getElementById("startBtn").addEventListener("click", () => {
     const username = document.getElementById("username").value.trim();
@@ -522,6 +533,16 @@ if (nameEl3 && isKoreanName(username)) nameEl3.classList.add("ko");
         </div>
       </div>
     `;
+
+    function addNote(text) {
+  const ul = document.querySelector('.notes-list');
+  const li = document.createElement('li');
+  li.textContent = text;
+  if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text)) {
+    li.classList.add('ko');
+  }
+  ul.appendChild(li);
+}
 
     if (tab === "Reading" && level === "A0") initA0Reading();
 
@@ -842,6 +863,19 @@ function runPlacementStep(state, levels, questions) {
   const currentQuestionSet = questions[level];
   const frameBox = document.querySelector(".frame-box");
 
+   // ★ 새로 추가: 현재 레벨에 문제가 없으면 다음 레벨로 건너뛰기
+  if (!currentQuestionSet || currentQuestionSet.length === 0) {
+    if (state.currentLevelIndex < levels.length - 1) {
+      state.currentLevelIndex++;
+      state.correctCount = 0;
+      state.questionIndex = 0;
+      return runPlacementStep(state, levels, questions);
+    } else {
+      // 모든 레벨에 문제가 없다면 안전망
+      return showPlacementResult("A1");
+    }
+  }
+
   // 테스트 종료 조건
 if (!currentQuestionSet || state.questionIndex >= currentQuestionSet.length) {
   const passed = state.correctCount >= 4; // 4개 이상 맞춰야 다음 레벨로
@@ -866,7 +900,7 @@ if (!currentQuestionSet || state.questionIndex >= currentQuestionSet.length) {
     <h2 class="question-number">Question ${state.globalIndex + 1}</h2>
     <p class="question-text">${q.question}</p>
     <div class="level-buttons">
-      ${q.options.map((opt, i) => `<button class="btn option" data-index="${i}">${opt}</button>`).join("")}
+      ${q.options.map((opt, i) => `<button class="btn option testbtn" data-index="${i}">${opt}</button>`).join("")}
     </div>
   </div>
   `;
@@ -1447,4 +1481,36 @@ setTimeout(() => {
   }
 }, 0);
 
+})();
+
+// 마우스 패럴럭스: 타이틀 화면일 때만 가볍게 동작
+(() => {
+  let rafId = null;
+  let lastX = 0, lastY = 0;
+
+  const onMove = (e) => {
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (rafId) return;
+    rafId = requestAnimationFrame(applyParallax);
+  };
+
+  function applyParallax() {
+    rafId = null;
+    const wrappers = document.querySelectorAll(".butterfly-wrapper");
+    if (!wrappers.length) return;
+
+    const { innerWidth: W, innerHeight: H } = window;
+    const offsetX = (lastX - W / 2) / (W / 2);   // -1 ~ 1
+    const offsetY = (lastY - H / 2) / (H / 2);   // -1 ~ 1
+
+    wrappers.forEach((wrap, idx) => {
+      // 왼쪽/오른쪽 강도 다르게
+      const strength = idx === 0 ? 10 : 14; // px
+      wrap.style.transform = `translate(${offsetX * strength}px, ${offsetY * strength}px)`;
+    });
+  }
+
+  // 타이틀 화면에서만 동작하게 하고 싶으면 상태 체크해서 add/remove 해도 됨
+  document.addEventListener("mousemove", onMove);
 })();
