@@ -141,6 +141,10 @@ if (navigator.storage && navigator.storage.persist) {
   });
 }
 
+function setScreenFlag(flag) {
+  document.body.classList.toggle('screen-learning', flag === 'learning');
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // 기존 로컬스토리지 데이터 읽기
   const savedName = localStorage.getItem("username");
@@ -154,6 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
     openMyCornerPanel();          // 같은 프레임에 패널 오픈
     return;
   }
+  // 한글 이름이면 전역 한글 폰트 적용
+  applyGlobalKoreanFontIfNeeded();
 
   // 첫 방문: 로컬에 이름이 없으면 곧바로 이름 입력 화면으로
 if (!savedName) {
@@ -240,7 +246,23 @@ if (savedName && savedLevel) {
   }
 });
 
+function isKoreanName(str = "") {
+  // 자음/모음 단독 포함까지 체크
+  return /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(str);
+}
+
+function applyGlobalKoreanFontIfNeeded() {
+  const name = localStorage.getItem("username") || "";
+  const root = document.documentElement; // <html>
+  if (isKoreanName(name)) {
+    root.classList.add("korean-global");
+  } else {
+    root.classList.remove("korean-global");
+  }
+}
+
 function renderNameInput() {
+  setScreenFlag(null);
   saveAppState("nameInput");
   const frameBox = document.querySelector(".frame-box");
   clearMembershipFrame();
@@ -261,6 +283,7 @@ function renderNameInput() {
       alert("Please enter your name!");
     } else {
       localStorage.setItem("username", username);
+      applyGlobalKoreanFontIfNeeded();
       localStorage.setItem("firstVisit", "true");
       showLevelSelection();
     }
@@ -271,6 +294,7 @@ function renderNameInput() {
 }
 
 function showLevelSelection() {
+  setScreenFlag(null);
   saveAppState("levelSelection");
   const frameBox = document.querySelector(".frame-box");
   const username = localStorage.getItem("username");
@@ -294,6 +318,8 @@ function showLevelSelection() {
 }
 
 function showMainAppScreen() {
+  setScreenFlag(null);
+  applyGlobalKoreanFontIfNeeded();
   saveAppState("mainApp");
   const frameBox = document.querySelector(".frame-box");
   const name = localStorage.getItem("username");
@@ -317,9 +343,11 @@ function showMainAppScreen() {
 }
 
 function showMainLearningScreen(initialTab = "Home") {
+  setScreenFlag('learning');
   if (typeof initialTab !== "string") initialTab = "Home";
   saveAppState("mainLearning", { tab: initialTab });
   // 탭 바 생성
+  applyGlobalKoreanFontIfNeeded();
   const tabBarWrapper = document.createElement("div");
   tabBarWrapper.classList.add("tab-bar-wrapper");
   tabBarWrapper.innerHTML = `
@@ -375,6 +403,7 @@ if (myCornerBtn) {
   myCornerBtn.addEventListener("click", () => {
     const prevTab = (loadAppState().tab) || "Home"; // 현재 탭 기억
     saveAppState("myCornerPanel", { lastTab: prevTab });
+    myCornerBtn.classList.add("active"); // ⬅️ 글자 볼드 on
     openMyCornerPanel(); // 같은 프레임에 패널 렌더
   });
 }
@@ -385,6 +414,7 @@ if (myCornerBtn) {
 }
 
 function updateTabContent(tab) {
+  document.querySelector('.my-corner')?.classList.remove('active');
   saveAppState("mainLearning", { tab });
   const state = loadAppState();
   const tabContent = document.getElementById("tabContent");
@@ -428,6 +458,7 @@ function updateTabContent(tab) {
   const randomMessage = cheerUps[Math.floor(Math.random() * cheerUps.length)].replace("[username]", username);
 
   if (tab === "Home") {
+    document.getElementById('studyNotes')?.remove();
     tabContent.innerHTML = `
       <div class="main-header-flex">
         <div class="level-indicator">Level ${localStorage.getItem("level")}</div>
@@ -447,7 +478,7 @@ function updateTabContent(tab) {
           <div class="dict-input-wrapper">
             <input class="input-row" id="krdictSearch" type="text" placeholder="Search a word..." />
             <button id="krdictGo" class="input-button input-row">🔍</button>
-            <p>
+            <p class="dict-note">
               🔸 The word you enter will open in a new window<br>
               on the <strong>KRDict</strong> website.<br>
               🔸 This feature uses text-based content from
@@ -456,9 +487,21 @@ function updateTabContent(tab) {
               🔸 Licensed under <strong>CC BY-SA 2.0 KR</strong>
             </p>
           </div>
+          <div id="studyNotes" class="notes-box">
+          <form class="notes-form">
+            <textarea class="notes-input" placeholder="Write a note..." rows="1"></textarea>
+            <button type="submit" class="nt-add">+</button>
+          </form>
+          <ul class="notes-list"></ul>
+          <div class="notes-clear-bar">
+            <button type="button" class="notes-clear">🗑️</button>
+          </div>
+        </div>
         </div>
       </div>
     `;
+
+    if (tab === "Reading" && level === "A0") initA0Reading();
 
    setTimeout(() => {
     const input = document.getElementById("krdictSearch");
@@ -488,6 +531,31 @@ function updateTabContent(tab) {
       <div class="main-section" style="flex: 1;">
         ${getLevelSpecificContent(tab, level)}
       </div>
+      <div class="dict-column">
+      <h3>📚 KRDict Quick Search</h3>
+          <div class="dict-input-wrapper">
+            <input class="input-row" id="krdictSearch" type="text" placeholder="Search a word..." />
+            <button id="krdictGo" class="input-button input-row">🔍</button>
+            <p>
+              🔸 The word you enter will open in a new window<br>
+              on the <strong>KRDict</strong> website.<br>
+              🔸 This feature uses text-based content from
+              <a href="https://krdict.korean.go.kr" target="_blank">KRDict</a><br>
+              🔸 © National Institute of Korean Language<br>
+              🔸 Licensed under <strong>CC BY-SA 2.0 KR</strong>
+            </p>
+          </div>
+      <div id="studyNotes" class="notes-box">
+          <form class="notes-form">
+            <textarea class="notes-input" placeholder="Write a note..." rows="1"></textarea>
+            <button type="submit" class="nt-add">+</button>
+          </form>
+          <ul class="notes-list"></ul>
+          <div class="notes-clear-bar">
+            <button type="button" class="notes-clear">🗑️</button>
+          </div>
+      </div>
+      </div>
     </div>
   `;
 }
@@ -497,13 +565,81 @@ function updateTabContent(tab) {
       <div class="main-section" style="flex: 1;">
         ${getLevelSpecificContent(tab, level)}
       </div>
+      <div class="dict-column">
+      <h3>📚 KRDict Quick Search</h3>
+          <div class="dict-input-wrapper">
+            <input class="input-row" id="krdictSearch" type="text" placeholder="Search a word..." />
+            <button id="krdictGo" class="input-button input-row">🔍</button>
+            <p>
+              🔸 The word you enter will open in a new window<br>
+              on the <strong>KRDict</strong> website.<br>
+              🔸 This feature uses text-based content from
+              <a href="https://krdict.korean.go.kr" target="_blank">KRDict</a><br>
+              🔸 © National Institute of Korean Language<br>
+              🔸 Licensed under <strong>CC BY-SA 2.0 KR</strong>
+            </p>
+          </div>
+      <div id="studyNotes" class="notes-box">
+          <form class="notes-form">
+            <textarea class="notes-input" placeholder="Write a note..." rows="1"></textarea>
+            <button type="submit" class="nt-add">+</button>
+          </form>
+          <ul class="notes-list"></ul>
+          <div class="notes-clear-bar">
+            <button type="button" class="notes-clear">🗑️</button>
+          </div>
+      </div>
+      </div>
     </div>
   `;
   }
+
+if (tab !== 'Home') {
+  try {
+    ensureGlobalNotesMounted && ensureGlobalNotesMounted();
+  } catch (e) { /* no-op */ }
+}
 }
 
 function getLevelSpecificContent(section, level) {
-  return `
+   if (section === "Reading" && level === "A0") {
+    return `
+    <div id="a0-reading">
+        <div class="hangul-overview">
+          <p class="hg-t">Hangul</p><br/>
+          <p class="hg-e">Invented in 1443 by <span class="hg-e-hl">King Sejong</span> and scholars for the instruction of the common people, Hangul was officially published in 1446.</p>
+          <p class="hg-e">In modern Korean, there are 19 consonants and 21 vowels, 40 in total. 
+          Consonants were designed to represent the shape of the speech organs when pronouncing them, while vowels were inspired by the concepts of heaven, earth, and human.</p>
+          <p class="hg-e">The consonants and the vowels are <span class="hg-e-hl">combined to form a syllable block</span>.</p>
+        </div>
+        <div class="grid-style">
+        <h3 class="grid-title">Consonants</h3>
+        <div id="jamoConsonantGrid" class="jamo-grid" aria-label="Consonant grid"></div>
+        <div id="consonantDetail" class="detail-frame hidden" aria-live="polite"></div>
+
+        <h3 class="grid-title" style="margin-top:1.5rem;">Vowels</h3>
+        <div id="jamoVowelGrid" class="jamo-grid" aria-label="Vowel grid"></div>
+        <div id="vowelDetail" class="detail-frame hidden" aria-live="polite"></div>
+
+        <div class="drill-wrap">
+          <button id="openDrill" class="btn drill-btn">Open Short Reading Drill</button>
+        </div>
+
+        <div id="drillModal" class="drill-modal hidden" role="dialog" aria-modal="true" aria-labelledby="drillTitle">
+          <div class="drill-panel">
+            <div class="drill-head">
+              <h4 id="drillTitle">A0 Reading Drill</h4>
+              <button id="closeDrill" class="btn small">Close</button>
+            </div>
+            <p class="drill-note">Read out loud. These use only A0 letters and simple batchim.</p>
+            <div id="drillList" class="drill-list"></div>
+          </div>
+        </div>
+        </div>
+      </div>
+    `;
+   }
+    return `
     <p><strong>${section} - Level ${level}</strong></p>
     <p style="margin-top: 1rem;">📝 Content for ${section} at ${level} level coming soon...</p>
   `;
@@ -511,6 +647,7 @@ function getLevelSpecificContent(section, level) {
 
 // 멤버십 비교 페이지
 function showMembershipPage() {
+  setScreenFlag(null);
   saveAppState("membershipCompare");
   const frameBox = document.querySelector(".frame-box");
   frameBox.classList.add("membership-frame");
@@ -562,6 +699,7 @@ function clearMembershipFrame() {
 }
 
 function showMembershipPaymentPage() {
+  setScreenFlag(null);
   saveAppState("membershipPayment");
   const frameBox = document.querySelector(".frame-box");
   clearMembershipFrame();
@@ -622,6 +760,7 @@ function showPlacementIntro() {
 const PL_LEVELS = ["A0", "A1", "A2", "B1", "B2", "C1"];
 
 function startPlacementTest(restoredState = null) {
+  setScreenFlag(null);
   saveAppState("placementTest", { testState: restoredState || null });
   const frameBox = document.querySelector(".frame-box");
 
@@ -722,6 +861,7 @@ if (!currentQuestionSet || state.questionIndex >= currentQuestionSet.length) {
 }
 
 function showPlacementResult(level) {
+  setScreenFlag(null);
   saveAppState("placementResult", { recommendedLevel: level });
   const frameBox = document.querySelector(".frame-box");
   frameBox.innerHTML = `
@@ -836,22 +976,89 @@ function loadAppState() {
 }
 
 function openMyCornerPanel() {
+  document.querySelector(".my-corner")?.classList.add("active"); //
   const tabContent = document.getElementById("tabContent");
+  const level = localStorage.getItem("level");
   if (!tabContent) return;
 
   tabContent.innerHTML = `
     <div class="main-header-flex">
-      <div class="level-indicator">Level ${localStorage.getItem("level")}</div>
-      <h2 class="hi">My Corner — Sync</h2>
+      <button class="btn change-level">Change Level</button>
+      <h2 class="hi hi-crn">✨<span class="scrn">🧸${localStorage.getItem("username")}'s Corner🍵</span>✨</h2>
     </div>
-    <p class="description">Save and load your data, using Google Drive</p>
 
+    <div class="level-overlay hidden" id="levelOverlay">
+      <div class="level-overlay-content">
+        <h3>Select a New Level</h3>
+        ${["A0","A1","A2","B1","B2","C1"].map(l => `<button class="btn level">${l}</button>`).join("")}
+        <div class="buttons" style="margin-top:1rem;">
+          <button class="btn secondary" id="closeOverlay">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="diary-customizer">
+  <div id="diaryCanvas" class="dc-canvas">
+    <!-- 배치된 요소들이 이 안에 들어감 -->
+  </div>
+
+  <!-- 모달: 프레임 선택 -->
+  <div class="dc-modal hidden" id="frameModal">
+    <div class="dc-modal-body">
+      <h3>Choose a Frame</h3>
+      <div class="dc-grid" id="frameGrid"></div>
+      <button class="btn secondary" id="frameClose">Close</button>
+    </div>
+  </div>
+
+  <!-- 모달: 팔레트(스티커/클립/북마크/펜/하이라이터) -->
+  <div class="dc-modal hidden" id="paletteModal">
+    <div class="dc-modal-body">
+      <h3>Palette</h3>
+      <div class="dc-tabs">
+        <button class="btn small" data-tab="sticker">Sticker</button>
+        <button class="btn small" data-tab="clip">Clip</button>
+        <button class="btn small" data-tab="bookmark">Bookmark</button>
+        <button class="btn small" data-tab="pen">Pen</button>
+        <button class="btn small" data-tab="hl">Highlight</button>
+      </div>
+      <div class="dc-grid" id="paletteGrid"></div>
+      <button class="btn secondary" id="paletteClose">Close</button>
+    </div>
+  </div>
+  <div class="dc-toolbar">
+      <button class="btn tb-btn" id="dcEditToggle">Edit</button>
+      <button class="btn tb-btn" id="dcChooseFrame">Frame</button>
+      <button class="btn tb-btn" id="dcPalette">Palette</button>
+      <button class="btn tb-btn" id="dcSave">Save</button>
+      <button class="btn tb-btn" id="dcReset">Reset</button>
+  </div>
+</div>
+
+    <div class="gd-connect">
+    <p class="description">Save and load your data, using Google Drive.</p>
     <div class="buttons" style="margin-top:1rem;">
-      <button class="btn" id="driveSave">Save to Google Drive</button>
-      <button class="btn" id="driveLoad">Load from Google Drive</button>
-      <button class="btn" id="driveDisconnect">Disconnect</button>
+      <button class="btn gd-btn" id="driveSave">Save</button>
+      <button class="btn gd-btn" id="driveLoad">Load</button>
+      <button class="btn gd-btn" id="driveDisconnect">Disconnect</button>
+    </div>
     </div>
   `;
+
+// 이벤트 바인딩
+  tabContent.querySelector(".change-level").addEventListener("click", () => {
+    document.getElementById("levelOverlay").classList.remove("hidden");
+  });
+  tabContent.querySelector("#closeOverlay").addEventListener("click", () => {
+    document.getElementById("levelOverlay").classList.add("hidden");
+  });
+  tabContent.querySelectorAll(".level-overlay .btn.level").forEach(btn => {
+    btn.addEventListener("click", () => {
+      localStorage.setItem("level", btn.textContent);
+      document.getElementById("levelOverlay").classList.add("hidden");
+      openMyCornerPanel(); // 새 레벨로 다시 렌더
+    });
+  });
 
   // 핸들러들
   document.getElementById("driveSave")?.addEventListener("click", async () => {
@@ -880,6 +1087,7 @@ function openMyCornerPanel() {
       if (data.appState) localStorage.setItem("appState", JSON.stringify(data.appState));
       alert("Loaded successfully!");
       const name = localStorage.getItem("username");
+      applyGlobalKoreanFontIfNeeded();
       const level = localStorage.getItem("level");
       if (level) return showMainAppScreen();
       if (name) return showLevelSelection();
@@ -912,3 +1120,305 @@ function openMyCornerPanel() {
     updateTabContent(s);
   });
 }
+
+/************ A0 READING DATA ************/
+const JAMO_CONSONANTS = [
+  { ch:"ㄱ", hint:"g/k", sound:"[g] ~ [k]", place:"Velar (back of tongue)", examples:["가", "고", "기", "구", "거"], caution:"Word-final ㄱ is a held [k̚]." },
+  { ch:"ㄴ", hint:"n",   sound:"[n]", place:"Alveolar (tongue tip)", examples:["나","누","니"], caution:"Before ㄹ it can nasalize—ignore at A0." },
+  { ch:"ㄷ", hint:"d/t", sound:"[d] ~ [t]", place:"Alveolar stop", examples:["다","도","디"], caution:"Word-final ㄷ → [t̚]." },
+  { ch:"ㄹ", hint:"r/l", sound:"[ɾ] between vowels; [l] coda", place:"Alveolar flap", examples:["라","로","리"], caution:"Not English R/L exactly—keep it light." },
+  { ch:"ㅁ", hint:"m",   sound:"[m]", place:"Bilabial nasal", examples:["마","모","미"], caution:"Keep lips gently closed." },
+  { ch:"ㅂ", hint:"b/p", sound:"[b] ~ [p]", place:"Bilabial stop", examples:["바","보","비"], caution:"Word-final ㅂ → held [p̚]." },
+  { ch:"ㅅ", hint:"s",   sound:"[s] (≈ [ɕ] before ㅣ)", place:"Alveolar fricative", examples:["사","소","시"], caution:"시 sounds like ‘shi’ but it’s ㅅ+ㅣ." },
+  { ch:"ㅇ", hint:"∅/ng", sound:"∅ initial; [ŋ] coda", place:"Null onset / velar nasal", examples:["아","오","이"], caution:"Initial ㅇ is silent; coda ㅇ is [ŋ]." },
+  { ch:"ㅈ", hint:"j",   sound:"[d͡ʑ] ~ [t͡ɕ]", place:"Alveolo-palatal affricate", examples:["자","조","지"], caution:"Contrast with ㅉ (tense) and ㅊ (aspirated) by feel, not spelling." },
+  { ch:"ㅊ", hint:"ch",  sound:"[t͡ɕʰ]", place:"Aspirated alveolo-palatal affricate", examples:["차","초","치"], caution:"A clear puff of air; not the same as tense ㅉ." },
+  { ch:"ㅋ", hint:"k",   sound:"[kʰ]", place:"Aspirated velar stop", examples:["카","코","키"], caution:"Stronger than ㄱ; audible puff." },
+  { ch:"ㅌ", hint:"t",   sound:"[tʰ]", place:"Aspirated alveolar stop", examples:["타","토","티"], caution:"Stronger than ㄷ; audible puff." },
+  { ch:"ㅍ", hint:"p",   sound:"[pʰ]", place:"Aspirated bilabial stop", examples:["파","포","피"], caution:"Stronger than ㅂ; audible puff." },
+  { ch:"ㅎ", hint:"h",   sound:"[h]", place:"Glottal fricative", examples:["하","호","히"], caution:"May weaken in fast speech—ignore nuances at A0." },
+
+  // Tense (fortis) series
+  { ch:"ㄲ", hint:"kk",  sound:"[k͈]", place:"Tense velar stop", examples:["까","꼬","끼"], caution:"Tense/tighter; no aspiration." },
+  { ch:"ㄸ", hint:"tt",  sound:"[t͈]", place:"Tense alveolar stop", examples:["따","또","띠"], caution:"Tense; not ‘th’, no aspiration." },
+  { ch:"ㅃ", hint:"pp",  sound:"[p͈]", place:"Tense bilabial stop", examples:["빠","뽀","삐"], caution:"Tense; lips firm, no puff." },
+  { ch:"ㅆ", hint:"ss",  sound:"[s͈]", place:"Tense alveolar fricative", examples:["싸","쏘","씨"], caution:"Stronger ‘s’; before ㅣ it still spells ㅆ+ㅣ = 씨." },
+  { ch:"ㅉ", hint:"jj",  sound:"[t͡ɕ͈]", place:"Tense alveolo-palatal affricate", examples:["짜","쪼","찌"], caution:"Tense ‘jj’; no aspiration (compare ㅊ)." }
+];
+
+const JAMO_VOWELS = [
+  { ch:"ㅏ", hint:"a",  sound:"[a] (ah)", layout:"Vertical (C|V)", examples:["가","나","마"], caution:"Right short bar." },
+  { ch:"ㅑ", hint:"ya", sound:"[ja]", layout:"Vertical (C|V)", examples:["야","냐","랴"], caution:"Two right ticks." },
+  { ch:"ㅓ", hint:"eo", sound:"[ʌ] (uh)", layout:"Vertical (C|V)", examples:["거","너","머"], caution:"Left short bar." },
+  { ch:"ㅕ", hint:"yeo",sound:"[jʌ]", layout:"Vertical (C|V)", examples:["겨","녀","려"], caution:"Two left ticks." },
+  { ch:"ㅗ", hint:"o",  sound:"[o]", layout:"Horizontal (C over V)", examples:["고","노","모"], caution:"Short bar above ㅡ." },
+  { ch:"ㅛ", hint:"yo", sound:"[jo]", layout:"Horizontal (C over V)", examples:["교","뇨","료"], caution:"Two ticks above." },
+  { ch:"ㅜ", hint:"u",  sound:"[u]", layout:"Horizontal (C over V)", examples:["구","누","무"], caution:"Short bar below ㅡ." },
+  { ch:"ㅠ", hint:"yu", sound:"[ju]", layout:"Horizontal (C over V)", examples:["규","뉴","류"], caution:"Two ticks below." },
+  { ch:"ㅡ", hint:"eu", sound:"[ɯ] (unrounded u)", layout:"Horizontal (C over V)", examples:["그","느","므"], caution:"Lips spread, not rounded." },
+  { ch:"ㅣ", hint:"i",  sound:"[i] (ee)", layout:"Vertical (C|V)", examples:["기","니","미"], caution:"Single vertical stroke." },
+   // AE/E group
+  { ch:"ㅐ", hint:"ae", sound:"[e] (eh)", layout:"Vertical (C|V)", examples:["개","내","매"], caution:"Merges with ㅔ in modern Seoul speech." },
+  { ch:"ㅔ", hint:"e",  sound:"[e] (eh)", layout:"Vertical (C|V)", examples:["게","네","메"], caution:"≈ ㅐ; treat both as ‘eh’ at A0." },
+
+  // YE/ YAE
+  { ch:"ㅒ", hint:"yae", sound:"[je]", layout:"Vertical (C|V)", examples:["얘","걔","냬"], caution:"Often realized close to ㅖ; low frequency—reading focus only." },
+  { ch:"ㅖ", hint:"ye",  sound:"[je]", layout:"Vertical (C|V)", examples:["예","녜","례"], caution:"Frequent word ‘예’; both ㅒ/ㅖ read ~[je] for A0." },
+
+  // W- compounds (based on ㅗ / ㅜ)
+  { ch:"ㅘ", hint:"wa",  sound:"[wa]", layout:"Horizontal (C over V)", examples:["과","놔","와"], caution:"Built from ㅗ+ㅏ; top-bottom layout." },
+  { ch:"ㅙ", hint:"wae", sound:"[wɛ] ~ [we]", layout:"Horizontal (C over V)", examples:["왜","괘","쇄"], caution:"Close to ㅞ/ㅚ in modern speech; treat as ‘we/wae’." },
+  { ch:"ㅚ", hint:"oe",  sound:"[we] (modern)", layout:"Horizontal (C over V)", examples:["외","괴","뇌"], caution:"Commonly ‘we’ today; spelling is ㅗ+ㅣ." },
+  { ch:"ㅝ", hint:"wo",  sound:"[wʌ]", layout:"Horizontal (C over V)", examples:["워","궈","눠"], caution:"Built from ㅜ+ㅓ; top-bottom layout." },
+  { ch:"ㅞ", hint:"we",  sound:"[we]", layout:"Horizontal (C over V)", examples:["웨","궤","눼"], caution:"Less common; treat as ‘we’." },
+  { ch:"ㅟ", hint:"wi",  sound:"[wi]", layout:"Horizontal (C over V)", examples:["위","귀","뉘"], caution:"Rounded lips; distinct from ㅚ/ㅞ awareness only." },
+
+  // UI
+  { ch:"ㅢ", hint:"ui",  sound:"[ɯi] ~ [i]", layout:"Horizontal (C over V)", examples:["의","희","늬"], caution:"After consonants often ~[i]; awareness only at A0." }
+];
+
+const A0_DRILL_WORDS = [
+  "나무", "바다", "누나", "로비", "미로", "라마", "고기", "마모", "노루", "나라",
+  "말", "밤", "밥", "국", "물", "날" // with basic batchim
+];
+
+/************ A0 READING RENDERER ************/
+function initA0Reading() {
+  const $cg = document.getElementById("jamoConsonantGrid");
+  const $vg = document.getElementById("jamoVowelGrid");
+  const $cDetail = document.getElementById("consonantDetail");
+  const $vDetail = document.getElementById("vowelDetail");
+
+  // 카드 렌더
+  $cg.innerHTML = JAMO_CONSONANTS.map(j => cardHTML(j.ch, j.hint, "consonant")).join("");
+  $vg.innerHTML = JAMO_VOWELS.map(j => cardHTML(j.ch, j.hint, "vowel")).join("");
+
+  // 기본 선택: ㄱ, ㅏ
+  let openConsonant = "ㄱ";
+  let openVowel = "ㅏ";
+  renderDetail("consonant", openConsonant, $cDetail);
+  renderDetail("vowel", openVowel, $vDetail);
+
+  // 이벤트: 토글 오픈/클로즈 (같은 카드 → 닫기)
+  $cg.querySelectorAll(".jamo-card").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ch = btn.dataset.ch;
+      if (openConsonant === ch && !$cDetail.classList.contains("hidden")) {
+        $cDetail.classList.add("hidden"); openConsonant = null; return;
+      }
+      openConsonant = ch;
+      renderDetail("consonant", ch, $cDetail);
+      $cDetail.classList.remove("hidden");
+    });
+  });
+
+  $vg.querySelectorAll(".jamo-card").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ch = btn.dataset.ch;
+      if (openVowel === ch && !$vDetail.classList.contains("hidden")) {
+        $vDetail.classList.add("hidden"); openVowel = null; return;
+      }
+      openVowel = ch;
+      renderDetail("vowel", ch, $vDetail);
+      $vDetail.classList.remove("hidden");
+    });
+  });
+
+  // Drill 모달
+  document.getElementById("openDrill").addEventListener("click", () => {
+    const $modal = document.getElementById("drillModal");
+    const $list = document.getElementById("drillList");
+    $list.innerHTML = A0_DRILL_WORDS
+      .map(w => `<span class="drill-item korean">${w}</span>`)
+      .join("");
+    $modal.classList.remove("hidden");
+  });
+  document.getElementById("closeDrill").addEventListener("click", () => {
+    document.getElementById("drillModal").classList.add("hidden");
+  });
+}
+
+// 카드 UI
+function cardHTML(ch, hint, kind) {
+  return `
+    <button class="jamo-card" data-kind="${kind}" data-ch="${ch}" aria-pressed="false">
+      <span class="jamo-big korean" aria-hidden="true">${ch}</span>
+      <span class="jamo-hint">${hint}</span>
+    </button>
+  `;
+}
+
+// 디테일 렌더
+function renderDetail(kind, ch, container) {
+  const data = (kind === "consonant" ? JAMO_CONSONANTS : JAMO_VOWELS).find(x => x.ch === ch);
+  if (!data) return;
+  const layoutRow = (data.layout
+    ? `<div class="detail-row"><span class="label">Layout</span><span class="value">${data.layout}</span></div>`
+    : "");
+  const examples = (data.examples || []).map(b => `<span class="eg korean">${b}</span>`).join(" ");
+  container.innerHTML = `
+    <div class="jamo-detail">
+      <div class="detail-head">
+        <span class="detail-glyph korean" aria-label="Selected character" role="img">${data.ch}</span>
+        <div class="detail-meta">
+          <div class="detail-row sound-dt"><span class="label">Sound</span><span class="value vcs">${data.sound}</span></div>
+          <div class="detail-row"><span class="label">Articulation</span><span class="value">${data.place}</span></div>
+          ${layoutRow}
+        </div>
+      </div>
+      <div class="detail-ex">
+        <div class="egs">${examples}</div>
+      </div>
+      <div class="detail-caution">
+        <span class="label">Watch out</span>
+        <span class="value dt-c">${data.caution}</span>
+      </div>
+    </div>
+  `;
+}
+
+/************ Global Study Notes (tab/level 공통) ************/
+(function GlobalStudyNotes(){
+  const KEY = (() => {
+    const u = (localStorage.getItem("username") || "anon").trim().toLowerCase();
+    // 유저별 전역 메모 키
+    return `notes:${u || "anon"}`;
+  })();
+
+  const LS = {
+    load(){ try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; } },
+    save(arr){ try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch {} },
+    clear(){ try { localStorage.removeItem(KEY); } catch {} }
+  };
+
+  const escapeHTML = (s="") =>
+    s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  function createNotesBox(){
+    const box = document.createElement("div");
+    box.id = "studyNotes";
+    box.className = "notes-box";
+    box.innerHTML = `
+      <form class="notes-form" autocomplete="off">
+        <textarea class="notes-input" placeholder="Write a note..." rows="1"></textarea>
+        <button type="submit" class="nt-add">+</button>
+      </form>
+      <ul class="notes-list"></ul>
+      <div class="notes-clear-bar">
+        <button type="button" class="notes-clear">🗑️</button>
+      </div>
+    `;
+    return box;
+  }
+
+  function render(listEl){
+    const items = LS.load();
+    listEl.innerHTML = "";
+    items.forEach((t, i) => {
+      const li = document.createElement("li");
+      li.className = "note-item";
+      li.innerHTML = `
+        <span class="note-text">${escapeHTML(t)}</span>
+        <button type="button" class="note-del" aria-label="delete">×</button>
+      `;
+      li.querySelector(".note-del").addEventListener("click", () => {
+        const next = LS.load().filter((_, idx) => idx !== i);
+        LS.save(next);
+        render(listEl);
+      });
+      listEl.appendChild(li);
+    });
+  }
+
+  // 탭 변경마다 호출해도 안전하게 한 번만 장착
+  window.ensureGlobalNotesMounted = function ensureGlobalNotesMounted(){
+    // 1) 렌더 대상 결정: 기본은 .dict-column 우선, 없으면 #tabContent 끝에 붙임
+    const tabContent = document.getElementById("tabContent");
+    if (!tabContent) return;
+
+    let host =
+      tabContent.querySelector(".dict-column") // 좌측 학습영역 옆에 있는 컬럼 우선
+      || tabContent;                            // 없으면 그냥 탭 콘텐츠 아래쪽
+
+    // 2) 이미 있으면 패스, 없으면 생성/부착
+    let notesBox = host.querySelector("#studyNotes") || document.getElementById("studyNotes");
+    if (!notesBox) {
+      notesBox = createNotesBox();
+      // dict-column 있으면 그 안에, 아니면 tabContent 맨 아래
+      if (host.classList.contains("dict-column")) {
+        host.appendChild(notesBox);
+      } else {
+        // 레이아웃이 세로일 때도 자연스럽게
+        const wrap = document.createElement("div");
+        wrap.style.marginTop = "1rem";
+        wrap.appendChild(notesBox);
+        tabContent.appendChild(wrap);
+      }
+    }
+
+    // 3) 이벤트 바인딩(중복 방지 위해 한 번씩 정리)
+    const formEl  = notesBox.querySelector(".notes-form");
+    const inputEl = notesBox.querySelector(".notes-input");
+    const listEl  = notesBox.querySelector(".notes-list");
+    const clrBtn  = notesBox.querySelector(".notes-clear");
+
+    if (!formEl._bound) {
+      formEl.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = (inputEl.value || "").trim();
+        if (!text) return;
+        const next = [...LS.load(), text];
+        LS.save(next);
+        inputEl.value = "";
+        render(listEl);
+      });
+      formEl._bound = true;
+    }
+
+    if (!clrBtn._bound) {
+      clrBtn.addEventListener("click", () => {
+        if (confirm("Clear all notes?")) {
+          LS.clear();
+          render(listEl);
+        }
+      });
+      clrBtn._bound = true;
+    }
+
+    // 4) 최초 렌더 + Clear 버튼 노출 토글
+    render(listEl);
+    const clearBar = notesBox.querySelector('.notes-clear-bar');
+    const updateClearBar = () => {
+      const hasNotes = (LS.load().length > 0);
+      clearBar?.classList.toggle('show', hasNotes);
+    };
+    updateClearBar();
+
+    // 렌더를 다시 부를 때도 반영되도록 render를 래핑해도 됨
+    const _renderOrig = render;
+    render = function(listElArg){
+      _renderOrig(listElArg);
+      updateClearBar();
+    };
+  }
+
+  // put near other small helpers
+function autoSizeTextArea(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.overflowY = "hidden";
+  el.style.height = el.scrollHeight + "px";
+}
+
+// after you inject the notes HTML (still inside updateTabContent)
+setTimeout(() => {
+  const ta = document.querySelector("#studyNotes .notes-input");
+  if (ta) {
+    autoSizeTextArea(ta);                // 초기 높이 맞추기
+    ta.addEventListener("input", () => { // 입력할 때마다 늘어나기
+      autoSizeTextArea(ta);
+    });
+  }
+}, 0);
+
+})();
