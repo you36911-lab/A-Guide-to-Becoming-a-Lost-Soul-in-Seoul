@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FCFBF8" />
+  <title>A Guide to Becoming a Lost Soul in Seoul · Learn Korean from the inside</title>
+  <meta name="description" content="A Korean course that explains how Hangul was designed, why words sound different from their spelling, and how the grammar fits together, across seventeen Seoul neighborhoods from A0 to C2." />
+  <meta name="author" content="Sooya" />
+  <!-- Set these to the live address once the site is online -->
+  <!-- <link rel="canonical" href="https://YOUR-DOMAIN/" /> -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="A Guide to Becoming a Lost Soul in Seoul" />
+  <meta property="og:title" content="A Guide to Becoming a Lost Soul in Seoul" />
+  <meta property="og:description" content="Learn Korean from the inside: Hangul, sounds and grammar, one Seoul neighborhood at a time." />
+  <meta property="og:image" content="og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A Guide to Becoming a Lost Soul in Seoul, with a pixel-art Seoul skyline" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="A Guide to Becoming a Lost Soul in Seoul" />
+  <meta name="twitter:description" content="Learn Korean from the inside: Hangul, sounds and grammar, one Seoul neighborhood at a time." />
+  <meta name="twitter:image" content="og-image.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Lost Soul in Seoul" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hahmlet:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
+  <link href="styles.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- ════════ Start screen ════════ -->
+  <div class="splash" id="splash" hidden>
+    <canvas class="splash-stars" id="splashStars" aria-hidden="true"></canvas>
+    <div class="splash-flyers" id="splashFlyers" aria-hidden="true"></div>
+    <div class="splash-inner">
+      <div class="splash-logo" aria-hidden="true">
+        <img src="logo-mark.png" alt="" class="logo-mark" width="32" height="32" />
+      </div>
+      <h1 class="splash-title" aria-label="A Guide to Becoming a Lost Soul in Seoul">
+        <span class="st-small" aria-hidden="true">A Guide to Becoming a</span>
+        <span class="st-big" aria-hidden="true" data-letters>Lost Soul</span>
+        <span class="st-small st-in" aria-hidden="true">in <span class="st-seoul">Seoul</span></span>
+      </h1>
+      <p class="splash-ko" lang="ko">한 걸음씩, 서울에서</p>
+      <p class="splash-sub">Korean from the inside: its letters, its sounds, its grammar, one neighborhood at a time.</p>
+      <div class="splash-actions">
+        <button class="btn btn-primary btn-lg" id="splashGo" type="button">Begin</button>
+        <button class="btn btn-ghost" id="splashPlace" type="button">Find my starting level</button>
+      </div>
+    </div>
+    <img src="background.png" alt="" class="splash-skyline" />
+  </div>
+
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="A Guide to Becoming a Lost Soul in Seoul, home">
+      <img src="logo-mark.png" alt="" class="logo-mark" width="32" height="32" />
+      <span class="brand-word" aria-hidden="true"><span class="w-guide">A Guide to Becoming a</span><span class="w-lost">Lost Soul <span class="w-in">in Seoul</span></span></span>
+    </a>
+    <nav class="mainnav" aria-label="Main">
+      <a href="#/" data-nav="journey">Journey</a>
+      <a href="#/reading" data-nav="reading">Reading</a>
+      <a href="#/diary" data-nav="diary">Diary</a>
+      <a href="#/lab" data-nav="lab">Lab</a>
+      <a href="#/dictionary" data-nav="dictionary">Dictionary</a>
+      <a href="#/hanja" data-nav="hanja">Hanja</a>
+      <a href="#/deep" data-nav="deep">Deep dives</a>
+      <a href="#/review" data-nav="review">Review <span class="nav-count" id="navReviewCount" hidden></span></a>
+      <a href="#/notebook" data-nav="notebook">Notebook</a>
+    </nav>
+    <div class="topbar-end">
+      <p class="topbar-progress" id="topProgress" aria-live="polite"></p>
+      <a class="icon-link" href="#/settings" data-nav="settings" aria-label="Settings">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <noscript><p style="padding:2rem;font-family:sans-serif">A Guide to Becoming a Lost Soul in Seoul is a Korean course that runs in your browser. Please turn on JavaScript to use it.</p></noscript>
+  <main id="main">
+    <!-- ════════ Journey ════════ -->
+    <div class="view" data-view="journey">
+      <header class="journey-head">
+        <p class="kicker">Your route</p>
+        <h1 class="display">One day <em>across</em> Seoul</h1>
+        <p class="lede">Seventeen neighborhoods, from dawn at Gwanghwamun to night on Inwangsan. Each place is a unit; each time of day, a level.</p>
+        <div class="journey-actions">
+          <button class="btn btn-primary" id="heroStart" type="button"></button>
+          <button class="btn btn-ghost" id="placementBtn" type="button">Find my starting level</button>
+        </div>
+      </header>
+
+      <section class="today" aria-label="Today" id="today"></section>
+
+      <section class="map-section" id="map" aria-labelledby="mapTitle">
+        <div class="map-head">
+          <h2 id="mapTitle" class="section-title">The map</h2>
+          <label class="switch">
+            <input type="checkbox" id="freeRoam" />
+            <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Unlock all places</span>
+          </label>
+        </div>
+        <ol class="legend" id="legend" aria-label="Levels"></ol>
+        <div class="map-frame">
+          <div class="map-scroll" id="mapScroll">
+            <svg id="mapSvg" viewBox="0 0 1000 700" role="group" aria-label="Map of Seoul with learning units"></svg>
+          </div>
+          <p class="map-note">Not to scale</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ════════ Place (unit + lessons) ════════ -->
+    <div class="view" data-view="place" hidden><div id="placeBody"></div></div>
+
+    <!-- ════════ Lab ════════ -->
+    <div class="view page" data-view="lab" hidden>
+      <header class="page-head">
+        <p class="kicker" lang="ko">연습실</p>
+        <h1 class="display">The <em>Lab</em></h1>
+        <p class="lede">Type any Korean and watch what happens to it: how it's pronounced and why, how a verb conjugates, how a number is read.</p>
+      </header>
+      <div id="labBody"></div>
+    </div>
+
+    <!-- ════════ Dictionary ════════ -->
+    <div class="view page" data-view="dictionary" hidden>
+      <header class="page-head">
+        <p class="kicker" lang="ko">사전</p>
+        <h1 class="display">Dictionary</h1>
+        <p class="lede">Pronunciation, the rules behind it, Hanja, definitions and example sentences. Search in Korean, English, or by initial consonants (ㅎㄱ → 한국).</p>
+      </header>
+      <div id="dictBody"></div>
+    </div>
+
+    <!-- ════════ Hanja ════════ -->
+    <div class="view page" data-view="hanja" hidden>
+      <header class="page-head">
+        <p class="kicker"><span lang="ko">한자 서당</span> <span class="badge-premium">Premium</span></p>
+        <h1 class="display">Hanja</h1>
+        <p class="lede">More than half of Korean vocabulary is built from Chinese characters. Learn one character and you can read the meaning of dozens of words.</p>
+      </header>
+      <div id="hanjaBody"></div>
+    </div>
+
+    <!-- ════════ Deep dives ════════ -->
+    <div class="view page" data-view="deep" hidden><div id="deepBody"></div></div>
+
+    <!-- ════════ Review ════════ -->
+    <div class="view page" data-view="review" hidden>
+      <header class="page-head">
+        <p class="kicker" lang="ko">복습</p>
+        <h1 class="display">Review</h1>
+        <p class="lede">Saved words come back just before you'd forget them. Questions you missed wait here until you get them right.</p>
+      </header>
+      <div id="reviewBody"></div>
+    </div>
+
+    <!-- ════════ Notebook ════════ -->
+    <div class="view page" data-view="notebook" hidden>
+      <header class="page-head">
+        <p class="kicker" lang="ko">학습 노트</p>
+        <h1 class="display">Notebook</h1>
+        <p class="lede">Everything you've written: quick notes from anywhere in the app, and your mission writing.</p>
+      </header>
+      <div id="notebookBody"></div>
+    </div>
+    <!-- ════════ Reading ════════ -->
+    <div class="view page" data-view="reading" hidden><div id="readingBody"></div></div>
+
+    <!-- ════════ Diary ════════ -->
+    <div class="view page" data-view="diary" hidden>
+      <header class="page-head">
+        <p class="kicker"><span lang="ko">오늘의 일기</span></p>
+        <h1 class="display">Daily <em>diary</em></h1>
+        <p class="lede">A few sentences in Korean, every day. Each day has a prompt for your level, and the checker flags common spelling mistakes.</p>
+      </header>
+      <div id="diaryBody"></div>
+    </div>
+
+    <!-- ════════ Settings ════════ -->
+    <div class="view page" data-view="settings" hidden>
+      <header class="page-head">
+        <p class="kicker"><span lang="ko">설정</span></p>
+        <h1 class="display">Settings</h1>
+      </header>
+      <div id="settingsBody"></div>
+    </div>
+
+    <!-- ════════ More (mobile menu) ════════ -->
+    <div class="view page" data-view="more" hidden>
+      <header class="page-head"><h1 class="display">More</h1></header>
+      <ul class="more-list">
+        <li><a href="#/reading"><span lang="ko">읽기</span> Reading</a></li>
+        <li><a href="#/lab"><span lang="ko">연습실</span> Lab</a></li>
+        <li><a href="#/hanja"><span lang="ko">한자</span> Hanja</a></li>
+        <li><a href="#/review"><span lang="ko">복습</span> Review</a></li>
+        <li><a href="#/notebook"><span lang="ko">학습 노트</span> Notebook</a></li>
+        <li><a href="#/settings"><span lang="ko">설정</span> Settings</a></li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <img src="logo-mark.png" alt="" class="logo-mark" width="32" height="32" />
+      <p>A Guide to Becoming a Lost Soul in Seoul · Made by Sooya with 💖</p>
+    </div>
+    <p class="footer-ref">Dictionary data: 한국어기초사전, National Institute of Korean Language (CC BY-SA 2.0 KR).</p>
+  </footer>
+
+  <!-- quick notes, available everywhere -->
+  <button class="notes-fab" id="notesFab" type="button" aria-expanded="false" aria-controls="notesPanel">
+    <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16H4v-3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <span>Note</span>
+  </button>
+  <aside class="notes-panel" id="notesPanel" aria-label="Quick notes" hidden></aside>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="#/" data-nav="journey"><span class="tab-ko" lang="ko">여정</span>Journey</a>
+    <a href="#/diary" data-nav="diary"><span class="tab-ko" lang="ko">일기</span>Diary</a>
+    <a href="#/dictionary" data-nav="dictionary"><span class="tab-ko" lang="ko">사전</span>Dictionary</a>
+    <a href="#/deep" data-nav="deep"><span class="tab-ko" lang="ko">심화</span>Deep</a>
+    <a href="#/review" data-nav="review"><span class="tab-ko" lang="ko">복습</span>Review</a>
+    <a href="#/more" data-nav="more"><span class="tab-ko" lang="ko">더보기</span>More</a>
+  </nav>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true" tabindex="-1">
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="engine.js" defer></script>
+  <script src="curriculum.js" defer></script>
+  <script src="practice.js" defer></script>
+  <script src="curriculum-more.js" defer></script>
+  <script src="dictionary.js" defer></script>
+  <script src="hanja.js" defer></script>
+  <script src="deepdives.js" defer></script>
+  <script src="readings.js" defer></script>
+  <script src="voices.js" defer></script>
+  <script src="renderer.js" defer></script>
+</body>
+</html>
