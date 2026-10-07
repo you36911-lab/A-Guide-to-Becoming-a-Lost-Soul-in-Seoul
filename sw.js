@@ -1,6 +1,6 @@
 /* Service worker: makes the app installable and usable offline.
    Bump VERSION whenever you change any file so visitors get the update. */
-const VERSION = "lss-v7";
+const VERSION = "lss-v10";
 const CORE = [
   "./", "./index.html", "./styles.css", "./renderer.js", "./engine.js", "./curriculum.js",
   "./practice.js", "./curriculum-more.js", "./dictionary.js", "./hanja.js", "./deepdives.js", "./readings.js", "./voices.js",

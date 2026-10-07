@@ -23,7 +23,7 @@
   const state = loadState();
 
   function freshState() {
-    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [], showPron: false, guideSeen: false };
+    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [], showPron: false, guides: {} };
   }
   function loadState() {
     const base = freshState();
@@ -35,6 +35,8 @@
     } catch { /* fall through */ }
     return base;
   }
+  if (!state.guides) state.guides = {};
+  if (state.guideSeen) { state.guides.journey = true; delete state.guideSeen; }
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, done: [...state.done], hanjaKnown: [...state.hanjaKnown] }));
@@ -61,6 +63,11 @@
   const skipped = u => !!state.startLevel && levelIdx(UNITS[u].level) < levelIdx(state.startLevel);
   const isStartUnit = u => !!state.startLevel && UNITS.findIndex(x => x.level === state.startLevel) === u;
   const isUnlocked = u => state.freeRoam || u === 0 || skipped(u) || isStartUnit(u) || unitComplete(u - 1);
+  // highest level the learner has reached on the map (everything up to it is open in other tabs too)
+  const maxOpenLevel = () => state.freeRoam ? LEVEL_ORDER.length - 1 : UNITS.reduce((m, u, i) => isUnlocked(i) ? Math.max(m, levelIdx(u.level)) : m, 0);
+  const levelOpen = code => levelIdx(code) <= maxOpenLevel();
+  const firstUnitOf = code => UNITS.find(u => u.level === code);
+  const lockedNote = code => { const u = firstUnitOf(code); return `Opens at ${code} ${LEVELS[code].en.toLowerCase()}, when you reach ${u ? u.placeEn : "that level"} on the map.`; };
   const totalLessons = UNITS.reduce((n, u) => n + u.lessons.length, 0);
   const currentUnit = () => {
     const i = UNITS.findIndex((_, u) => !skipped(u) && !unitComplete(u));
@@ -79,7 +86,8 @@
   }
   const dueWords = () => Object.entries(state.saved).filter(([, s]) => s.due <= Date.now()).map(([w]) => w);
   const mistakeList = () => Object.values(state.mistakes);
-  const hanjaFree = i => ACCESS.premium || i < HANJA_SETS[0].free;
+  const hanjaLevelOk = i => (HANJA[i] && HANJA[i][5] === "7") ? levelOpen("B1") : true;
+  const hanjaFree = i => hanjaLevelOk(i) && (ACCESS.premium || i < HANJA_SETS[0].free);
 
   function svgEl(tag, attrs = {}, parent) {
     const n = document.createElementNS(SVG_NS, tag);
@@ -200,7 +208,7 @@
     $$("[data-nav]").forEach(a => a.setAttribute("aria-current", a.dataset.nav === navKey ? "page" : "false"));
     if (["lab", "hanja", "notebook", "settings", "reading"].includes(view)) $$(".tabbar [data-nav='more']").forEach(a => a.setAttribute("aria-current", "page"));
     if (drawer.classList.contains("open")) closeDrawer(true);
-    if (!$("#guide").hidden && view !== "journey") closeGuide();
+    if (!$("#guide").hidden) closeGuide();
     window.scrollTo({ top: 0 });
     if (view === "journey") { renderToday(); renderMap(); }
     if (view === "place") renderPlace(seg[1], seg[2]);
@@ -213,6 +221,7 @@
     if (view === "diary") renderDiary();
     if (view === "reading") renderReading(seg[1]);
     if (view === "settings") renderSettings();
+    maybeShowGuide();
     document.title = view === "journey" ? "A Guide to Becoming a Lost Soul in Seoul" : `${({ place: "Place", reading: "Reading", diary: "Diary", lab: "Lab", dictionary: "Dictionary", hanja: "Hanja", deep: "Deep dives", review: "Review", notebook: "Notebook", settings: "Settings", more: "More" })[view]} · A Guide to Becoming a Lost Soul in Seoul`;
     renderNotesPanel();
   }
@@ -506,7 +515,7 @@
         </nav>
 
         <header class="place-head">
-          <p class="kicker">No. ${pad2(i + 1)} <span class="kicker-sep"></span> ${u.level} <span lang="ko">${lv.ko}</span> · ${lv.en}</p>
+          <div class="place-badges"><span class="pb-level" style="background:${lv.color}">${u.level} <span lang="ko">${lv.ko}</span></span><span class="pb-no">No. ${pad2(i + 1)}</span><span class="pb-en">${lv.en}</span></div>
           <h1 class="place-name"><span lang="ko">${esc(u.place)}</span> <em>${esc(u.placeEn)}</em></h1>
           <p class="place-title">${esc(u.title)} <span class="place-title-ko" lang="ko">${esc(u.titleKo)}</span></p>
           <p class="lede">${esc(u.blurb)}</p>
@@ -593,7 +602,7 @@
       <p class="lesson-term" lang="ko">${esc(l.k)}</p>
       <p class="lesson-lead">${esc(l.s)}</p>
 
-      <section class="lesson-block b-ideas">
+      <section class="lesson-block ${mission ? "b-check" : "b-ideas"}">
         <h3 class="block-h">${mission ? "Checklist" : "Key ideas"}</h3>
         ${mission
           ? `<ul class="checklist" lang="ko">${l.p.map((p, k) => `<li><label><input type="checkbox" data-check="${k}" ${checks[k] ? "checked" : ""}/><span>${esc(p)}</span></label></li>`).join("")}</ul>`
@@ -1018,7 +1027,31 @@
     $("#glyphTable").innerHTML = `<thead><tr><th scope="col">Typeface</th>${glyphs.map(g => `<th scope="col" lang="ko">${g}</th>`).join("")}</tr></thead>
       <tbody>${fonts.filter(f => f.glyphRow).map(f => `<tr><th scope="row"><span lang="ko">${f.cat}</span> <span class="muted">${esc(f.name)}</span></th>${glyphs.map(g => `<td lang="ko" style="font-family:${esc(f.css)}">${g}</td>`).join("")}</tr>`).join("")}</tbody>`;
 
-    if (tool) requestAnimationFrame(() => $(`#tool-${tool}`)?.scrollIntoView({ block: "start" }));
+    makeCollapsible();
+    if (tool) requestAnimationFrame(() => { const t = $(`#tool-${tool}`); if (t && t.classList.contains("closed")) t.querySelector(".tool-toggle").click(); t?.scrollIntoView({ block: "start" }); });
+  }
+  // Each tool's title and description stay visible; the rest folds away
+  function makeCollapsible() {
+    state.labClosed = state.labClosed || {};
+    $$("#labBody .tool").forEach(sec => {
+      const h = sec.querySelector("h2"), sub = sec.querySelector(".tool-sub");
+      const head = document.createElement("div"); head.className = "tool-head";
+      const body = document.createElement("div"); body.className = "tool-body"; body.id = sec.id + "-body";
+      [...sec.childNodes].forEach(n => { if (n !== h && n !== sub) body.appendChild(n); });
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "tool-toggle";
+      btn.setAttribute("aria-controls", body.id);
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Show or hide ${h.textContent}</span>`;
+      const text = document.createElement("div"); text.className = "tool-headtext";
+      text.append(h); if (sub) text.append(sub);
+      head.append(text, btn);
+      sec.append(head, body);
+      const set = closed => { sec.classList.toggle("closed", closed); btn.setAttribute("aria-expanded", String(!closed)); body.hidden = closed; };
+      set(!!state.labClosed[sec.id]);
+      const toggle = () => { const c = !sec.classList.contains("closed"); set(c); state.labClosed[sec.id] = c; save(); };
+      btn.addEventListener("click", e => { e.stopPropagation(); toggle(); });
+      h.style.cursor = "pointer"; h.addEventListener("click", toggle);
+    });
   }
 
   /* ═════════ Spelling (common mistakes) ═════════ */
@@ -1344,6 +1377,7 @@
       </section>`).join("")}`;
     $$("[data-hj]", $("#hanjaBody")).forEach(b => b.addEventListener("click", () => {
       const i = Number(b.dataset.hj);
+      if (!hanjaLevelOk(i)) { toast(lockedNote("B1")); return; }
       if (!hanjaFree(i)) { toast("This character is part of the premium Hanja course."); return; }
       openHanja(i, b);
     }));
@@ -1678,15 +1712,19 @@
         ${ACCESS.premium ? "" : `<div class="premium-note"><p><strong>Premium.</strong> You can read the opening of every deep dive. The full notes are part of the premium plan.</p></div>`}
         ${LEVEL_ORDER.filter(code => DEEP_DIVES.some(x => x.level === code)).map(code => `
           <section class="deep-level">
-            <h2 class="deep-level-h"><span class="lv-dot" style="background:${LEVELS[code].color}"></span>${code} <span lang="ko">${LEVELS[code].ko}</span> <span class="muted">${LEVELS[code].en}</span></h2>
+            <h2 class="deep-level-h"><span class="lv-dot" style="background:${LEVELS[code].color}"></span>${code} <span lang="ko">${LEVELS[code].ko}</span> <span class="muted">${LEVELS[code].en}</span>${levelOpen(code) ? "" : `<span class="lvl-locked">${lockIcon} Locked</span>`}</h2>
             <ol class="deep-index">
-              ${DEEP_DIVES.filter(x => x.level === code).map(x => `<li><a href="#/deep/${x.id}">
+              ${DEEP_DIVES.filter(x => x.level === code).map(x => !levelOpen(x.level) ? `<li><span class="locked-row" title="${esc(lockedNote(x.level))}"><span class="deep-no">${pad2(DEEP_DIVES.indexOf(x) + 1)}</span><span class="deep-main"><span class="deep-title">${esc(x.title)}</span><span class="deep-ko" lang="ko">${esc(x.titleKo)}</span></span><span class="deep-meta"><span class="deep-lock">${lockIcon} ${x.level}</span></span></span></li>` : `<li><a href="#/deep/${x.id}">
                 <span class="deep-no">${pad2(DEEP_DIVES.indexOf(x) + 1)}</span>
                 <span class="deep-main"><span class="deep-title">${esc(x.title)}</span><span class="deep-ko" lang="ko">${esc(x.titleKo)}</span><span class="deep-lede">${esc(x.lede)}</span></span>
                 <span class="deep-meta">${ACCESS.premium ? "" : `<span class="deep-lock">${lockIcon} Premium</span>`}</span>
               </a></li>`).join("")}
             </ol>
           </section>`).join("")}`;
+      return;
+    }
+    if (!levelOpen(d.level)) {
+      box.innerHTML = `<article class="deep-article"><a class="back-link" href="#/deep">${arrowL}<span>All deep dives</span></a><div class="locked-card level-lock">${lockIcon}<p><strong>${esc(d.title)}</strong> ${esc(lockedNote(d.level))}</p></div></article>`;
       return;
     }
     const k = DEEP_DIVES.indexOf(d), open = ACCESS.premium;
@@ -1817,15 +1855,19 @@
         </header>
         ${LEVEL_ORDER.filter(code => READINGS.some(x => x.level === code)).map(code => `
           <section class="deep-level">
-            <h2 class="deep-level-h"><span class="lv-dot" style="background:${LEVELS[code].color}"></span>${code} <span lang="ko">${LEVELS[code].ko}</span> <span class="muted">${LEVELS[code].en}</span></h2>
+            <h2 class="deep-level-h"><span class="lv-dot" style="background:${LEVELS[code].color}"></span>${code} <span lang="ko">${LEVELS[code].ko}</span> <span class="muted">${LEVELS[code].en}</span>${levelOpen(code) ? "" : `<span class="lvl-locked">${lockIcon} Locked</span>`}</h2>
             <ol class="deep-index read-index">
-              ${READINGS.filter(x => x.level === code).map(x => { const u = UNITS.find(y => y.id === x.unit); return `<li><a href="#/reading/${x.id}">
+              ${READINGS.filter(x => x.level === code).map(x => { const u = UNITS.find(y => y.id === x.unit); return !levelOpen(x.level) ? `<li><span class="locked-row" title="${esc(lockedNote(x.level))}"><span class="read-type">${esc(x.type)}</span><span class="deep-main"><span class="deep-title">${esc(x.title)}</span><span class="deep-ko" lang="ko">${esc(x.titleKo)}</span></span><span class="deep-meta"><span class="deep-lock">${lockIcon} ${x.level}</span></span></span></li>` : `<li><a href="#/reading/${x.id}">
                 <span class="read-type">${esc(x.type)}</span>
                 <span class="deep-main"><span class="deep-title">${esc(x.title)}</span><span class="deep-ko" lang="ko">${esc(x.titleKo)}</span></span>
                 <span class="deep-meta"><span class="read-place" lang="ko">${esc(u ? u.place : "")}</span>${state.readDone.includes(x.id) ? `<span class="read-done">Read ✓</span>` : ""}</span>
               </a></li>`; }).join("")}
             </ol>
           </section>`).join("")}`;
+      return;
+    }
+    if (!levelOpen(r.level)) {
+      box.innerHTML = `<article class="deep-article"><a class="back-link" href="#/reading">${arrowL}<span>All readings</span></a><div class="locked-card level-lock">${lockIcon}<p><strong>${esc(r.title)}</strong> ${esc(lockedNote(r.level))}</p></div></article>`;
       return;
     }
     const i = UNITS.findIndex(u => u.id === r.unit), u = UNITS[i];
@@ -1954,8 +1996,8 @@
       </section>
       <section class="set-block">
         <h2 class="sub-h">Guide</h2>
-        <p class="backup-sub">The red crayon notes that show where to start.</p>
-        <div class="backup-actions"><button class="btn btn-small btn-ghost" id="guideAgain" type="button">Show the guide again</button></div>
+        <p class="backup-sub">The red crayon notes that appear the first time you open each screen.</p>
+        <div class="backup-actions"><button class="btn btn-small btn-ghost" id="guideAgain" type="button">Show the guides again</button></div>
       </section>
       <section class="set-block">
         <h2 class="sub-h">Audio</h2>
@@ -1971,7 +2013,7 @@
     renderBackupStatus();
     $("#voiceCount").textContent = `${collectVoiceLines().length} lines`;
     $("#voiceListBtn").addEventListener("click", downloadVoiceList);
-    $("#guideAgain").addEventListener("click", () => { state.guideSeen = false; save(); location.hash = "#/"; setTimeout(showGuide, 400); });
+    $("#guideAgain").addEventListener("click", () => { state.guides = {}; save(); location.hash = "#/"; });
     $("#setRoam").addEventListener("change", e => { state.freeRoam = e.target.checked; $("#freeRoam").checked = state.freeRoam; save(); });
     $("#setSplash").addEventListener("change", e => { state.showSplash = e.target.checked; save(); });
     $("#setTTS").addEventListener("change", e => { state.ttsFallback = e.target.checked; save(); });
@@ -1984,97 +2026,170 @@
     });
   }
 
-  /* ═════════ First-run guide, drawn in red crayon ═════════ */
+  /* ═════════ Guide: one crayon note at a time, on every screen's first visit ═════════ */
+  const GUIDES = {
+    journey: [
+      ["#heroStart", "Start here. One neighborhood at a time, in order."],
+      ["#placementBtn", "Not a beginner? Take the level check first."],
+      ["#today .today-continue", "Every day: pick up where you left off."],
+      ["nav:diary", "Write a few lines in Korean every day."],
+      ["nav:review", "Questions you miss come back here."],
+      ["#notesFab", "Jot a note from any screen."]
+    ],
+    place: [
+      [".place-badges", "Your level and this place's number on the route."],
+      [".toc", "All lessons in this place. Go in order."],
+      ["#lessonArea .lesson-no, #startUnit", "Start the lesson here."],
+      [".pron-toggle", "Show how each example is really pronounced."],
+      [".b-practice", "One question for every key idea."],
+      ["[data-act='toggle']", "Mark the lesson done to move on."],
+      [".back-link", "Choose another place on the map."]
+    ],
+    reading: [
+      [".read-index li a, .read-chat, .read-prose, .read-sign", "A text for every neighborhood. Tap to listen."],
+      [".gloss", "Key words. Tap one to open the dictionary."],
+      [".b-practice, .qlist", "Check that you understood."]
+    ],
+    diary: [
+      [".diary-prompt", "Today's prompt, matched to your level."],
+      ["#diaryIn", "Write here. It saves as you type."],
+      ["#diaryCheck", "Check for common spelling mistakes."]
+    ],
+    lab: [
+      ["#pronIn", "Type any word to see how it's pronounced, and why."],
+      ["#conjIn", "Conjugate any verb, irregular ones too."],
+      ["#spellIn", "Paste your writing to catch common mistakes."]
+    ],
+    dictionary: [
+      ["#dictIn", "Search in Korean, English, or by initials like ㅎㄱ."],
+      ["#typeFilter", "Filter grammar patterns, idioms and proverbs."],
+      ["#dictList .dict-head", "Open an entry for pronunciation and examples."]
+    ],
+    hanja: [
+      [".week-row", "Start with the days of the week."],
+      ["#hjQuiz", "Quiz yourself on the characters you know."],
+      ["#hjBuild", "Build words from characters."]
+    ],
+    deep: [
+      [".deep-index li a, .deep-head", "Nice-to-know notes, grouped by level."]
+    ],
+    review: [
+      [".segmented", "Saved words and missed questions."],
+      ["#startCards, .review-start, .empty", "Review a little every day."]
+    ],
+    notebook: [
+      ["#noteForm", "Your notes from anywhere in the app."],
+      [".segmented", "Mission writing is kept here too."]
+    ]
+  };
+  let guideRun = null;
+  const visible = el => el && el.offsetParent !== null && el.getClientRects().length;
+  function guideTarget(sel) {
+    if (sel.startsWith("nav:")) { const k = sel.slice(4); return [...$$(`.mainnav [data-nav="${k}"], .tabbar [data-nav="${k}"]`)].find(visible); }
+    return [...$$(sel)].find(visible);
+  }
   function maybeShowGuide() {
-    if (state.guideSeen) return;
     setTimeout(() => {
+      if (!$("#splash").hidden || !$("#guide").hidden || drawer.classList.contains("open")) return;
       const v = $$(".view").find(x => !x.hidden)?.dataset.view;
-      if (v === "journey" && !state.guideSeen && $("#guide").hidden) showGuide();
-    }, 350);
+      if (!v || !GUIDES[v] || state.guides[v]) return;
+      const steps = GUIDES[v].map(([sel, text]) => ({ sel, text })).filter(s => guideTarget(s.sel));
+      if (steps.length) startGuide(v, steps);
+    }, 450);
   }
-  function visibleNav(key) {
-    return [...$$(`.mainnav [data-nav="${key}"], .tabbar [data-nav="${key}"]`)].find(el => el.offsetParent !== null);
-  }
-  function showGuide() {
-    const g = $("#guide");
-    window.scrollTo(0, 0);
-    g.hidden = false;
+  function startGuide(view, steps) {
+    guideRun = { view, steps, i: 0 };
+    $("#guide").hidden = false;
     document.body.classList.add("guide-on");
-    const steps = [
-      { el: $("#heroStart"), text: "Start here! One neighborhood at a time, in order." },
-      { el: $("#placementBtn"), text: "Not a beginner? Find your level first." },
-      { el: visibleNav("diary"), text: "Write a few lines every day." },
-      { el: visibleNav("review"), text: "Missed questions come back here." },
-      { el: $("#notesFab"), text: "Jot a note from anywhere." }
-    ].filter(s => s.el && (innerWidth >= 700 || !/Not a beginner|Jot a note/.test(s.text)));
-    const draw = () => {
-      const W = innerWidth, H = innerHeight;
-      const rnd = (a, b) => a + Math.random() * (b - a);
-      const loop = r => {
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const rx = r.width / 2 + 14, ry = r.height / 2 + 12;
-        let d = "";
-        const start = rnd(0, Math.PI), turns = Math.PI * 2 + .45;
-        for (let k = 0; k <= 34; k++) {
-          const t = start + (turns * k) / 34;
-          const j = 1 + rnd(-.05, .05);
-          const x = cx + Math.cos(t) * rx * j, y = cy + Math.sin(t) * ry * j;
-          d += (k ? " L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
-        }
-        return { d, cx, cy, rx, ry };
-      };
-      const lines = (text, max) => {
-        const words = text.split(" "), out = [""];
-        words.forEach(w => { if ((out[out.length - 1] + " " + w).trim().length > max) out.push(w); else out[out.length - 1] = (out[out.length - 1] + " " + w).trim(); });
-        return out;
-      };
-      let svg = "";
-      const placed = [];
-      steps.forEach((s, n) => {
-        const r = s.el.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > H) return;
-        const o = loop(r);
-        const ls = lines(s.text, W < 600 ? 18 : 24);
-        const above = r.top > H * .55;
-        let lx = Math.min(Math.max(o.cx + (n % 2 ? 40 : -40), 110), W - 110);
-        let ly = above ? r.top - 70 - (ls.length - 1) * 24 : r.bottom + 64;
-        placed.forEach(p => { if (Math.abs(p.x - lx) < 200 && Math.abs(p.y - ly) < 60) ly += above ? -60 : 60; });
-        placed.push({ x: lx, y: ly });
-        const ay = above ? ly + (ls.length - 1) * 24 + 10 : ly - 26;
-        const ey = above ? o.cy - o.ry : o.cy + o.ry;
-        const midx = (lx + o.cx) / 2 + (n % 2 ? 30 : -30);
-        svg += `<path class="cr" d="${o.d}"/>`;
-        svg += `<path class="cr thin" d="M${lx} ${ay} Q${midx} ${(ay + ey) / 2} ${o.cx} ${ey + (above ? -4 : 4)}"/>`;
-        const tip = { x: o.cx, y: ey + (above ? -4 : 4) };
-        const dir = above ? 1 : -1;
-        svg += `<path class="cr thin" d="M${tip.x - 9} ${tip.y - 10 * dir} L${tip.x} ${tip.y} L${tip.x + 10} ${tip.y - 9 * dir}"/>`;
-        svg += `<text class="cr-text" x="${lx}" y="${ly}" text-anchor="middle">${ls.map((l, k) => `<tspan x="${lx}" dy="${k ? 24 : 0}">${esc(l)}</tspan>`).join("")}</text>`;
-      });
-      g.innerHTML = `
-        <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
-          <defs><filter id="crayon"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter></defs>
-          <g filter="url(#crayon)">${svg}</g>
-        </svg>
-        <div class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
-          <p class="guide-title" id="guideTitle">Welcome! Here's how it works.</p>
-          <ul class="sr-only">${steps.map(s => `<li>${esc(s.text)}</li>`).join("")}</ul>
-          <button class="btn btn-primary" type="button" id="guideDone">Got it</button>
-        </div>`;
-      $("#guideDone").addEventListener("click", closeGuide);
-      $("#guideDone").focus({ preventScroll: true });
-    };
-    draw();
-    showGuide.redraw = () => { if (!g.hidden) draw(); };
-    window.addEventListener("resize", showGuide.redraw);
+    drawGuideStep();
+    window.addEventListener("resize", drawGuideStep);
+  }
+  function drawGuideStep() {
+    if (!guideRun) return;
+    const { steps, i } = guideRun, s = steps[i];
+    const el = guideTarget(s.sel);
+    const g = $("#guide");
+    if (!el) { nextGuideStep(1); return; }
+    const r0 = el.getBoundingClientRect();
+    if (r0.top < 80 || r0.bottom > innerHeight - 120) { el.scrollIntoView({ block: "center" }); }
+    const r = el.getBoundingClientRect();
+    const W = innerWidth, H = innerHeight;
+    // a calm hand-drawn loop: smooth wobble, slight overshoot where the pen meets the start
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const rx = Math.min(r.width / 2 + 16, W / 2 - 8), ry = r.height / 2 + 13;
+    const wideT = rx > 170 || r.width / Math.max(r.height, 1) > 4.5;
+    const above = wideT ? r.bottom + 140 > H : cy > H * .55;
+    const a0 = -Math.PI * .62, phase = i * 1.3;
+    const wide = rx > 170 || r.width / Math.max(r.height, 1) > 4.5;
+    let d = "";
+    if (wide) {
+      const x0 = Math.max(r.left - 6, 8), x1 = Math.min(r.right + 6, W - 8), yb = above ? r.top - 9 : r.bottom + 9;
+      const n = Math.max(6, Math.round((x1 - x0) / 22));
+      d = `M${x0.toFixed(1)} ${yb}`;
+      for (let k = 1; k <= n; k++) {
+        const xa = x0 + (x1 - x0) * (k - .5) / n, xb = x0 + (x1 - x0) * k / n;
+        d += ` Q${xa.toFixed(1)} ${(yb + (k % 2 ? 6 : -6)).toFixed(1)} ${xb.toFixed(1)} ${yb}`;
+      }
+    } else
+    for (let k = 0; k <= 64; k++) {
+      const t = a0 + (Math.PI * 2 + .32) * k / 64;
+      const wob = 1 + .025 * Math.sin(2 * t + phase) + .012 * Math.sin(5 * t);
+      const shrink = 1 - .05 * (k / 64); // ends slightly inside the start, like a real pen
+      d += (k ? " L" : "M") + (cx + Math.cos(t) * rx * wob * shrink).toFixed(1) + " " + (cy + Math.sin(t) * ry * wob * shrink).toFixed(1);
+    }
+    const lines = []; s.text.split(" ").forEach(w => { const l = lines[lines.length - 1]; if (!l || (l + " " + w).length > (W < 600 ? 22 : 30)) lines.push(w); else lines[lines.length - 1] = l + " " + w; });
+    const lx = Math.min(Math.max(cx, 130), W - 130);
+    const ly = wideT ? (above ? r.top - 74 - (lines.length - 1) * 26 : r.bottom + 76) : (above ? cy - ry - 64 - (lines.length - 1) * 26 : cy + ry + 62);
+    const ay = above ? ly + (lines.length - 1) * 26 + 12 : ly - 28;
+    const ey = wide ? (above ? r.top - 18 : r.bottom + 18) : (above ? cy - ry - 4 : cy + ry + 4);
+    const bend = lx < cx ? 26 : -26;
+    const dir = above ? 1 : -1;
+    const cardTop = !above;
+    g.innerHTML = `
+      <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        <defs><filter id="crayon" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.1"/></filter></defs>
+        <g filter="url(#crayon)">
+          <path class="cr" d="${d}"/>
+          <path class="cr thin" d="M${lx} ${ay} Q${(lx + cx) / 2 + bend} ${(ay + ey) / 2} ${cx} ${ey}"/>
+          <path class="cr thin" d="M${cx - 8} ${ey - 10 * dir} L${cx} ${ey} L${cx + 9} ${ey - 8 * dir}"/>
+          <text class="cr-text" x="${lx}" y="${ly}" text-anchor="middle">${lines.map((l, k) => `<tspan x="${lx}" dy="${k ? 26 : 0}">${esc(l)}</tspan>`).join("")}</text>
+        </g>
+      </svg>
+      <div class="guide-card${cardTop ? " at-top" : ""}" role="dialog" aria-modal="true" aria-labelledby="guideText">
+        <p class="guide-step">${i + 1} / ${steps.length}</p>
+        <p class="sr-only" id="guideText">${esc(s.text)}</p>
+        <div class="guide-btns">
+          <button class="link-btn" type="button" data-g="skip">Skip</button>
+          ${i > 0 ? `<button class="btn btn-small btn-ghost" type="button" data-g="back">Back</button>` : ""}
+          <button class="btn btn-small btn-primary" type="button" data-g="next">${i === steps.length - 1 ? "Got it" : "Next"}</button>
+        </div>
+      </div>`;
+    g.querySelector('[data-g="next"]').addEventListener("click", () => nextGuideStep(1));
+    g.querySelector('[data-g="back"]')?.addEventListener("click", () => nextGuideStep(-1));
+    g.querySelector('[data-g="skip"]').addEventListener("click", closeGuide);
+    g.querySelector('[data-g="next"]').focus({ preventScroll: true });
+  }
+  function nextGuideStep(step) {
+    if (!guideRun) return;
+    guideRun.i += step;
+    if (guideRun.i >= guideRun.steps.length) { closeGuide(); return; }
+    if (guideRun.i < 0) guideRun.i = 0;
+    drawGuideStep();
   }
   function closeGuide() {
     const g = $("#guide");
+    if (guideRun) { state.guides[guideRun.view] = true; save(); }
+    guideRun = null;
     g.hidden = true; g.innerHTML = "";
     document.body.classList.remove("guide-on");
-    window.removeEventListener("resize", showGuide.redraw);
-    state.guideSeen = true; save();
+    window.removeEventListener("resize", drawGuideStep);
   }
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#guide").hidden) closeGuide(); });
+  document.addEventListener("keydown", e => {
+    if ($("#guide").hidden) return;
+    if (e.key === "Escape") closeGuide();
+    if (e.key === "ArrowRight") nextGuideStep(1);
+    if (e.key === "ArrowLeft") nextGuideStep(-1);
+  });
 
   /* ═════════ Init ═════════ */
   function init() {
