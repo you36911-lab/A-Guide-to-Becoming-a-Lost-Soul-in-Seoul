@@ -25,7 +25,7 @@ const UNITS = [
     id: "gwanghwamun", place: "광화문", placeEn: "Gwanghwamun", level: "A0", x: 440, y: 238,
     title: "Hangul by design", titleKo: "한글의 원리",
     blurb: "King Sejong stands here for a reason. Start with the alphabet that was engineered, not inherited: every letter tells you how to say it.",
-    fact: "Hangul Day (한글날) is October 9, the anniversary of the 1446 proclamation. North Korea celebrates its own version, 조선글날, on January 15, counting from the alphabet's creation instead.",
+    fact: "Hangul Day (한글날) is October 9, the anniversary of the 1446 proclamation. It stopped being a public holiday in 1991 and became one again in 2013. The 1446 book that introduced the alphabet, 훈민정음 해례본, is on UNESCO's Memory of the World register.",
     ref: ["초등 1학년 국어 — 자음자·모음자, 글자의 짜임", "중학교 국어 — 한글의 창제 원리"],
     lessons: [
       { t: "Five shapes of the mouth", k: "기본자 ㄱ ㄴ ㅁ ㅅ ㅇ",

@@ -833,7 +833,7 @@ body.guide-on { overflow: hidden; }
 .guide .cr-text { font-family: "Gaegu", "Nanum Pen Script", "Comic Sans MS", cursive; font-weight: 700; font-size: 23px; fill: #D7443A; paint-order: stroke; stroke: #FCFBF8; stroke-width: 7px; stroke-linejoin: round; }
 .guide-card { position: absolute; left: 50%; bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 1rem; padding: .8rem .8rem .8rem 1.3rem; background: var(--surface); border: 2px solid #D7443A; border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 2rem); }
 .guide-title { font-family: "Gaegu", cursive; font-weight: 700; font-size: 1.3rem; color: #D7443A; }
-@media (max-width: 700px) { .guide-card { top: calc(70px + env(safe-area-inset-top, 0px)); bottom: auto; left: 1rem; right: 1rem; transform: none; justify-content: space-between; } .guide .cr-text { font-size: 20px; } .guide-title { font-size: 1.1rem; } }
+@media (max-width: 700px) { .guide-card { left: 1rem; right: 1rem; transform: none; justify-content: space-between; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } .guide-card.at-top { top: calc(64px + env(safe-area-inset-top, 0px)); bottom: auto; } .guide .cr-text { font-size: 20px; } .guide-title { font-size: 1.1rem; } }
 @media (prefers-reduced-motion: reduce) { .ln-big { box-shadow: none; } }
 
 /* 원고지 */
@@ -897,3 +897,10 @@ body.guide-on { overflow: hidden; }
 .b-practice .qcard { background: #fff; border-color: #EAE3DC; }
 .b-practice .qcard.is-right { background: #FAFDFB; border-color: #C6E2D1; }
 .b-practice .qcard.is-wrong { background: #FFFBFC; border-color: #F2C9D2; }
+
+.today-split { display: flex; flex-direction: column; gap: .05rem; }
+.today-split span { white-space: nowrap; }
+.guide-card.at-top { top: calc(74px + env(safe-area-inset-top, 0px)); }
+@media (min-width: 701px) and (max-width: 960px) { .guide-card { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
+.today-row { display: flex; align-items: baseline; gap: .7rem; }
+.today-row .today-meta { margin-top: 0; line-height: 1.35; }

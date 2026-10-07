@@ -13,7 +13,7 @@ const DEEP_DIVES = [
       { h: "Three systems",
         table: { head: ["System", "Used for", "부산", "김치", "한국어"], rows: [
           ["Revised Romanization (2000)", "South Korea's official system: signs, maps, passports", "Busan", "gimchi", "hangugeo"],
-          ["McCune–Reischauer (1939)", "Western scholarship for decades; basis of North Korea's system", "Pusan", "kimch'i", "han'gugŏ"],
+          ["McCune–Reischauer (1939)", "Western scholarship and libraries for decades", "Pusan", "kimch'i", "han'gugŏ"],
           ["Yale (1942)", "Linguistics; writes the spelling letter by letter", "pwusan", "kimchi", "hankwuke"]] },
         p: ["Revised Romanization uses no special symbols (ㅓ = eo, ㅡ = eu). It follows pronunciation, so 신라 is Silla, but leaves out tensing: 압구정 is Apgujeong, though it's pronounced [압꾸정].",
             "McCune–Reischauer marks aspiration with an apostrophe and uses ŏ and ŭ. It writes ㄱ ㄷ ㅂ ㅈ as k t p ch, or g d b j between voiced sounds, which is why it has Pusan but Taegu."] },

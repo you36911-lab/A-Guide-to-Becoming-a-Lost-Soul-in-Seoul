@@ -319,8 +319,7 @@
         </div>
         <a class="today-stat today-link" href="#/review">
           <span class="today-label">To review</span>
-          <span class="today-num">${due + mis}</span>
-          <span class="today-meta">${due} ${due === 1 ? "word" : "words"}, ${mis} ${mis === 1 ? "question" : "questions"}</span>
+          <span class="today-row"><span class="today-num">${due + mis}</span><span class="today-meta today-split"><span>${due} ${due === 1 ? "word" : "words"}</span><span>${mis} ${mis === 1 ? "question" : "questions"}</span></span></span>
         </a>
         <div class="today-proverb">
           <span class="today-label" lang="ko">${p[2] ? "오늘의 사자성어" : "오늘의 속담"}</span>
@@ -967,7 +966,7 @@
         ${r.rules.length ? `<ul class="rule-list">${r.rules.map(k => { const R = K.RULES[k]; return `<li><span class="rule-ko" lang="ko">${R.ko}</span><span>${R.en}</span><span class="rule-ref" lang="ko">${R.ref}</span></li>`; }).join("")}</ul>` : `<p class="muted">Pronounced as written.</p>`}
         <dl class="rom-list">
           <div><dt>Revised Romanization</dt><dd>${esc(K.romanize(v, "rr"))}</dd><span class="muted">South Korea, 2000</span></div>
-          <div><dt>McCune–Reischauer</dt><dd>${esc(K.romanize(v, "mr"))}</dd><span class="muted">1939, basis of North Korea's system</span></div>
+          <div><dt>McCune–Reischauer</dt><dd>${esc(K.romanize(v, "mr"))}</dd><span class="muted">1939, long used in Western scholarship</span></div>
           <div><dt>Yale</dt><dd>${esc(K.romanize(v, "yale"))}</dd><span class="muted">linguistics, spelling letter by letter</span></div>
         </dl>
         <p class="tool-note">The rules work from spelling. Compounds can add sounds the spelling doesn't show (ㄴ 첨가, 사잇소리). Common ones are listed by hand; for others, check 표준국어대사전.</p>`;
@@ -2033,20 +2032,20 @@
     journey: [
       ["#heroStart", "Start here. One neighborhood at a time, in order."],
       ["#placementBtn", "Not a beginner? Take the level check first."],
-      ["#today .today-continue", "Every day: pick up where you left off."],
+      ["#today .today-continue", "Every day: pick up where you left off.", { shape: "circle" }],
       ["nav:diary", "Write a few lines in Korean every day."],
       ["nav:review", "Questions you miss come back here."],
       ["#notesFab", "Jot a note from any screen."],
       ["#helpBtn", "Tap ? any time to see this guide again."]
     ],
     place: [
-      [".place-badges", "Your level and this place's number on the route."],
+      [".place-badges", "Your level and this place's number on the route.", { shape: "circle", side: "right" }],
       [".toc-item[aria-current='page'], .toc", () => $(".toc-item[aria-current='page']") ? "You are here. The other lessons in this place are listed in order." : "All lessons in this place. Go in order.", { shape: "circle" }],
       ["#lessonArea .ln-big, #startUnit", () => $("#lessonArea .ln-big") ? "This is the lesson you're on." : "Start the first lesson here.", { shape: "circle" }],
       [".pron-toggle", "Show how each example is really pronounced."],
       [".b-practice", "One question for every key idea."],
       ["[data-act='toggle']", "Mark the lesson done to move on."],
-      [".back-link", "Choose another place on the map."]
+      [".back-link", "Choose another place on the map.", { shape: "circle" }]
     ],
     reading: [
       [".deep-level", "A text for every neighborhood, grouped by level. Locked ones open as you move along the map.", { shape: "circle" }]
@@ -2107,7 +2106,12 @@
     return (GUIDES[key] || []).map(([sel, text, opt]) => ({ sel, text, opt: opt || {} })).filter(s => guideTarget(s.sel));
   }
   let guideRun = null;
-  const visible = el => el && el.offsetParent !== null && el.getClientRects().length;
+  // offsetParent is null for position:fixed elements (like the Note button), so check the box and style instead
+  const visible = el => {
+    if (!el || !el.getClientRects().length) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== "none" && cs.visibility !== "hidden" && !el.closest("[hidden]");
+  };
   function guideTarget(sel) {
     if (sel.startsWith("nav:")) { const k = sel.slice(4); return [...$$(`.mainnav [data-nav="${k}"], .tabbar [data-nav="${k}"]`)].find(visible); }
     // try each comma-separated part in order, so the first listed wins
@@ -2141,7 +2145,9 @@
   function drawGuideStep() {
     if (!guideRun) return;
     const { steps, i } = guideRun, s = steps[i];
-    const el = guideTarget(s.sel);
+    let el = guideTarget(s.sel);
+    // very tall targets (a whole practice block, a long article) are marked by their heading instead
+    if (el && el.getBoundingClientRect().height > innerHeight * .45) el = el.querySelector(".practice-head, h2, h3, .block-h") || el;
     const g = $("#guide");
     if (!el) { nextGuideStep(1); return; }
     const r0 = el.getBoundingClientRect();
@@ -2182,19 +2188,31 @@
     const lx = Math.min(Math.max(cx, 130), W - 130);
     let ly = wideT ? (above ? r.top - 74 - (lines.length - 1) * 26 : r.bottom + 76) : (above ? cy - ry - 64 - (lines.length - 1) * 26 : cy + ry + 62);
     ly = Math.min(Math.max(ly, 110), H - 40 - (lines.length - 1) * 26);
+    // "side": put the note in the empty space to the right of the target
+    const longest = Math.max(...lines.map(l => l.length)) * 11;
+    const sideOK = s.opt.side === "right" && (W - (cx + rx) > longest + 90);
     const ay = above ? ly + (lines.length - 1) * 26 + 12 : ly - 28;
     const ey = wide ? (above ? r.top - 18 : r.bottom + 18) : (above ? cy - ry - 4 : cy + ry + 4);
     const bend = lx < cx ? 26 : -26;
     const dir = above ? 1 : -1;
-    const cardTop = above; // keep the card on the opposite side of the screen from the target
+    // pick the card position that doesn't cover the drawing or its note
+    const tLx = sideOK ? cx + rx + 58 : lx, tLy = sideOK ? cy + 7 - (lines.length - 1) * 13 : ly;
+    const drawTop = Math.min(cy - ry, tLy - 24) - 12, drawBottom = Math.max(cy + ry, tLy + (lines.length - 1) * 26 + 10) + 12;
+    const cardH = 64, topBand = [74, 74 + cardH], botBand = [H - 32 - cardH - (W <= 960 ? 64 : 0), H - 32 - (W <= 960 ? 64 : 0)];
+    const hits = band => !(drawBottom < band[0] || drawTop > band[1]);
+    const cardTop = hits(botBand) && !hits(topBand) ? true : !hits(botBand) ? false : (drawTop > H - drawBottom);
     g.innerHTML = `
       <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <defs><filter id="crayon" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.1"/></filter></defs>
         <g filter="url(#crayon)">
           <path class="cr" d="${d}"/>
+          ${sideOK ? `
+          <path class="cr thin" d="M${tLx - 10} ${cy} Q${cx + rx + 30} ${cy - 14} ${cx + rx + 6} ${cy}"/>
+          <path class="cr thin" d="M${cx + rx + 16} ${cy - 8} L${cx + rx + 6} ${cy} L${cx + rx + 16} ${cy + 8}"/>
+          <text class="cr-text" x="${tLx}" y="${tLy}" text-anchor="start">${lines.map((l, k) => `<tspan x="${tLx}" dy="${k ? 26 : 0}">${esc(l)}</tspan>`).join("")}</text>` : `
           <path class="cr thin" d="M${lx} ${ay} Q${(lx + cx) / 2 + bend} ${(ay + ey) / 2} ${cx} ${ey}"/>
           <path class="cr thin" d="M${cx - 8} ${ey - 10 * dir} L${cx} ${ey} L${cx + 9} ${ey - 8 * dir}"/>
-          <text class="cr-text" x="${lx}" y="${ly}" text-anchor="middle">${lines.map((l, k) => `<tspan x="${lx}" dy="${k ? 26 : 0}">${esc(l)}</tspan>`).join("")}</text>
+          <text class="cr-text" x="${lx}" y="${ly}" text-anchor="middle">${lines.map((l, k) => `<tspan x="${lx}" dy="${k ? 26 : 0}">${esc(l)}</tspan>`).join("")}</text>`}
         </g>
       </svg>
       <div class="guide-card${cardTop ? " at-top" : ""}" role="dialog" aria-modal="true" aria-labelledby="guideText">
