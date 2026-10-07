@@ -26,8 +26,8 @@
   --bad:         #B4445C;
   --bad-soft:    #FDEEF1;
 
-  --serif: "Instrument Serif", "Hahmlet", "Noto Serif KR", Georgia, serif;
-  --ko:    "Hahmlet", "Instrument Serif", "Noto Serif KR", "Apple SD Gothic Neo", serif;
+  --serif: "Playfair Display", "Hahmlet", "Noto Serif KR", Georgia, serif;
+  --ko:    "Hahmlet", "Playfair Display", "Noto Serif KR", "Apple SD Gothic Neo", serif;
   --sans:  "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
 
   --r-s: 10px; --r-m: 16px; --r-l: 24px;
@@ -746,3 +746,101 @@ body.splash-on { overflow: hidden; }
   .read-line { grid-template-columns: 1fr auto; }
   .read-who { grid-column: 1 / -1; }
 }
+
+/* ═════════ Round 8 ═════════ */
+
+/* no-flash start screen */
+html.no-splash .splash { display: none; }
+html.splash-pending body { overflow: hidden; }
+
+/* bold editorial headings (Playfair Display has real weights) */
+.display { font-weight: 700; letter-spacing: -.02em; line-height: 1.02; }
+.display em { font-weight: 600; }
+.lesson-title, .place-title, .section-title, .sub-h, .tool h2, .l-title, .deep-body h2, .deep-title, .intro-t, .empty-t, .np-title, .deep-mini-t { font-weight: 700; letter-spacing: -.01em; }
+.place-name em, .w-lost, .w-in { font-weight: 600; }
+.st-big { font-weight: 700; }
+.today-num, .toc-n, .intro-n, .q-n, .deep-no { font-weight: 700; }
+.lesson-title { font-size: clamp(2rem, 3.8vw, 2.9rem); line-height: 1.08; }
+.place-title-ko, .lesson-term { font-weight: 500; }
+
+/* scrollbars */
+html { scrollbar-width: thin; scrollbar-color: #E6CCD3 transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #EBD5DB; border-radius: 999px; border: 3px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #DDB6C1; }
+.place-side::-webkit-scrollbar-thumb, .drawer-body::-webkit-scrollbar-thumb, .notes-panel::-webkit-scrollbar-thumb { border-color: transparent; }
+
+/* fun fact: warm butter card with a little star */
+.fact { background: #FFF5D6; border: 1px solid #F4E2A6; position: relative; }
+.fact-label { display: flex; align-items: center; gap: .4rem; }
+.fact-label::before { content: "★"; color: #E8B93E; font-size: .9em; }
+
+/* section color blocks in lessons */
+.lesson-block.b-ideas, .lesson-block.b-examples, .lesson-block.b-practice, .lesson-block.b-turn { padding: 1.5rem clamp(1rem, 3vw, 1.75rem); border-radius: var(--r-l); }
+.lesson-block.b-ideas { background: var(--lv-soft, #F6F1F4); }
+.lesson-block.b-examples { background: #EEF5FB; }
+.lesson-block.b-practice { background: #F5F1FA; }
+.lesson-block.b-turn { background: #FFF8E3; }
+.b-examples .example, .b-practice .qcard { background: rgba(255, 255, 255, .85); }
+.lesson-block .block-h { color: var(--ink); }
+
+/* lesson number */
+.lesson-no { display: flex; align-items: center; gap: .9rem; margin-bottom: .8rem; }
+.ln-big {
+  display: inline-grid; place-items: center; min-width: 3.4rem; height: 3.4rem; padding: 0 .5rem;
+  border-radius: 1.1rem; background: var(--lv, var(--accent)); color: #fff;
+  font-family: var(--serif); font-weight: 800; font-size: 1.6rem; line-height: 1; box-shadow: 0 6px 16px var(--lv-mid, rgba(0,0,0,.08));
+}
+.lesson-no.is-mission .ln-big { background: var(--ink); }
+.ln-of { font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+.toc-n { color: var(--ink); }
+.toc-item[aria-current="page"] .toc-n { color: var(--lv); }
+
+/* highlighter */
+.hl { background: linear-gradient(transparent 52%, #F6E08F 52%, #F6E08F 92%, transparent 92%); color: inherit; padding: 0 .12em; border-radius: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.lesson-term { display: inline; background: linear-gradient(transparent 55%, #F6E08F 55%, #F6E08F 93%, transparent 93%); padding: 0 .15em; }
+.lesson-term + .lesson-lead { margin-top: 1.4rem; }
+
+/* pronunciation toggle */
+.pron-toggle { border: 1px solid var(--line-strong); background: rgba(255,255,255,.8); border-radius: 999px; padding: .25rem .75rem; font-size: .78rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.pron-toggle[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.ex-main { display: grid; gap: .1rem; }
+.ex-pron { display: none; font-size: .92rem; color: var(--accent-ink); }
+.show-pron .ex-pron { display: block; }
+
+/* practice instructions */
+.q-instr { font-size: .78rem; font-style: italic; color: var(--ink-2); margin-bottom: .35rem; }
+
+/* back to top */
+.to-top {
+  position: fixed; right: clamp(1rem, 3vw, 2rem); bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px)); z-index: 34;
+  width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow);
+}
+.to-top:hover { border-color: var(--ink); }
+@media (max-width: 960px) { .to-top { bottom: calc(130px + env(safe-area-inset-bottom, 0px)); } }
+
+/* Hanja builder */
+.build-reset { margin: .2rem 0 .4rem; border-color: var(--ink); }
+
+/* crayon guide */
+body.guide-on { overflow: hidden; }
+.guide { position: fixed; inset: 0; z-index: 150; background: rgba(252, 251, 248, .55); }
+.guide-svg { position: absolute; inset: 0; pointer-events: none; }
+.guide .cr { fill: none; stroke: #D7443A; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: .92; }
+.guide .cr.thin { stroke-width: 2.4; }
+.guide .cr-text { font-family: "Gaegu", "Nanum Pen Script", "Comic Sans MS", cursive; font-weight: 700; font-size: 23px; fill: #D7443A; }
+.guide-card { position: absolute; left: 50%; bottom: calc(2rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 1rem; padding: .8rem .8rem .8rem 1.3rem; background: var(--surface); border: 2px solid #D7443A; border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 2rem); }
+.guide-title { font-family: "Gaegu", cursive; font-weight: 700; font-size: 1.3rem; color: #D7443A; }
+@media (max-width: 700px) { .guide-card { top: calc(70px + env(safe-area-inset-top, 0px)); bottom: auto; left: 1rem; right: 1rem; transform: none; justify-content: space-between; } .guide .cr-text { font-size: 20px; } .guide-title { font-size: 1.1rem; } }
+@media (prefers-reduced-motion: reduce) { .ln-big { box-shadow: none; } }
+
+/* 원고지 */
+.wg-tool { margin-top: 2rem; }
+.wg-wrap { overflow-x: auto; margin-top: 1.2rem; }
+.wg-paper { display: inline-grid; gap: 6px; padding: 14px; background: #fff; border: 1px solid #F0C9CF; }
+.wg-row { display: grid; grid-template-columns: repeat(20, 30px); border: 1px solid #EBA9B3; }
+.wg-cell { height: 30px; border-right: 1px solid #F3C4CB; display: grid; place-items: center; font-family: var(--ko); font-size: 17px; line-height: 1; color: var(--ink); }
+.wg-cell:last-child { border-right: 0; }
+.wg-cell.two { font-size: 12px; letter-spacing: -.02em; }

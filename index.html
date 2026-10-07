@@ -33,13 +33,27 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hahmlet:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600;1,700&family=Hahmlet:wght@300;400;500;600;700&family=Gaegu:wght@400;700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
   <link href="styles.css" rel="stylesheet" />
+  <script>
+    /* Decide about the start screen before the page paints, so the app never flashes first */
+    (function () {
+      var show = true;
+      try {
+        var st = JSON.parse(localStorage.getItem("lss:v2") || "{}");
+        if (st.showSplash === false) show = false;
+        if (sessionStorage.getItem("lss:splash") === "1") show = false;
+      } catch (e) {}
+      var h = location.hash;
+      if (h && h !== "#/" && h !== "#") show = false;
+      document.documentElement.classList.add(show ? "splash-pending" : "no-splash");
+    })();
+  </script>
 </head>
 <body>
   <!-- ════════ Start screen ════════ -->
-  <div class="splash" id="splash" hidden>
+  <div class="splash" id="splash">
     <canvas class="splash-stars" id="splashStars" aria-hidden="true"></canvas>
     <div class="splash-flyers" id="splashFlyers" aria-hidden="true"></div>
     <div class="splash-inner">
@@ -83,7 +97,7 @@
     <div class="topbar-end">
       <p class="topbar-progress" id="topProgress" aria-live="polite"></p>
       <a class="icon-link" href="#/settings" data-nav="settings" aria-label="Settings">
-        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 2.6h3.4l.5 2.6a7.7 7.7 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.7a7.8 7.8 0 0 1 0 2.2l2 1.7-1.7 2.9-2.5-.9a7.7 7.7 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.7 7.7 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.7a7.8 7.8 0 0 1 0-2.2l-2-1.7 1.7-2.9 2.5.9a7.7 7.7 0 0 1 1.9-1.1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
       </a>
     </div>
   </header>
@@ -221,6 +235,11 @@
     </div>
     <p class="footer-ref">Dictionary data: 한국어기초사전, National Institute of Korean Language (CC BY-SA 2.0 KR).</p>
   </footer>
+
+  <button class="to-top" id="toTop" type="button" aria-label="Back to top" hidden>
+    <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5M5 9.5 10 4.5l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="guide" id="guide" hidden></div>
 
   <!-- quick notes, available everywhere -->
   <button class="notes-fab" id="notesFab" type="button" aria-expanded="false" aria-controls="notesPanel">

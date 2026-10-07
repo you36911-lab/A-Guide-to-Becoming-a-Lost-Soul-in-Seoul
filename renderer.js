@@ -23,7 +23,7 @@
   const state = loadState();
 
   function freshState() {
-    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [] };
+    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [], showPron: false, guideSeen: false };
   }
   function loadState() {
     const base = freshState();
@@ -200,6 +200,7 @@
     $$("[data-nav]").forEach(a => a.setAttribute("aria-current", a.dataset.nav === navKey ? "page" : "false"));
     if (["lab", "hanja", "notebook", "settings", "reading"].includes(view)) $$(".tabbar [data-nav='more']").forEach(a => a.setAttribute("aria-current", "page"));
     if (drawer.classList.contains("open")) closeDrawer(true);
+    if (!$("#guide").hidden && view !== "journey") closeGuide();
     window.scrollTo({ top: 0 });
     if (view === "journey") { renderToday(); renderMap(); }
     if (view === "place") renderPlace(seg[1], seg[2]);
@@ -554,6 +555,25 @@
       </div>`;
   }
 
+  // Mark the important part of a key idea with a highlighter stroke:
+  // ==text== explicitly, otherwise the pattern before the first colon.
+  function highlight(s) {
+    let t = esc(s);
+    if (/==.+?==/.test(s)) return t.replace(/==(.+?)==/g, '<mark class="hl">$1</mark>');
+    const m = t.match(/^([^:]{2,70}):\s/);
+    return m ? `<mark class="hl">${m[1]}</mark>:${t.slice(m[0].length - 1)}` : t;
+  }
+  // An example line with its pronunciation, shown when the toggle is on
+  function exampleHTML(x) {
+    const s = speakable(x);
+    let pron = "";
+    if (/[가-힣]/.test(s) && !/\[/.test(x)) {
+      const p = s.split(/\s*,\s*/).map(part => K.pronounce(part.replace(/[.?!…"“”'‘’]/g, "")).text).join(", ");
+      if (p.replace(/\s/g, "") !== s.replace(/[\s.?!…,"“”'‘’]/g, "")) pron = p;
+    }
+    return `<p class="example"><span class="ex-main"><span>${esc(x)}</span>${pron ? `<span class="ex-pron">[${esc(pron)}]</span>` : ""}</span>${speakBtn(x)}</p>`;
+  }
+
   function lessonHTML(i, j) {
     const u = UNITS[i], l = u.lessons[j];
     const id = lessonId(i, j), isDone = state.done.has(id), mission = l.kind === "mission";
@@ -568,26 +588,26 @@
       : (u.id === "gangnam" && j === 0) ? ["#/lab?tool=num", "Read any number in the lab"]
       : (u.id === "jongno" && j === 3) ? ["#/hanja", "Learn the characters in the Hanja course"] : null;
     return `
-      <p class="kicker">${mission ? "Mission" : `Lesson ${j + 1} of ${nLessons}`}</p>
+      <div class="lesson-no${mission ? " is-mission" : ""}"><span class="ln-big" aria-hidden="true">${mission ? "★" : pad2(j + 1)}</span><span class="ln-of">${mission ? "Mission" : `Lesson ${j + 1} of ${nLessons}`}</span></div>
       <h2 class="lesson-title">${esc(l.t)}</h2>
       <p class="lesson-term" lang="ko">${esc(l.k)}</p>
       <p class="lesson-lead">${esc(l.s)}</p>
 
-      <section class="lesson-block">
+      <section class="lesson-block b-ideas">
         <h3 class="block-h">${mission ? "Checklist" : "Key ideas"}</h3>
         ${mission
           ? `<ul class="checklist" lang="ko">${l.p.map((p, k) => `<li><label><input type="checkbox" data-check="${k}" ${checks[k] ? "checked" : ""}/><span>${esc(p)}</span></label></li>`).join("")}</ul>`
-          : `<ol class="key-ideas" lang="ko">${l.p.map(p => `<li>${esc(p)}</li>`).join("")}</ol>`}
+          : `<ol class="key-ideas" lang="ko">${l.p.map(p => `<li><span>${highlight(p)}</span></li>`).join("")}</ol>`}
         ${l.table ? `<div class="table-wrap lesson-table"><table class="deep-table"><thead><tr>${l.table.head.map(x => `<th scope="col">${esc(x)}</th>`).join("")}</tr></thead><tbody>${l.table.rows.map(row => `<tr>${row.map((c, ci) => ci === 0 ? `<th scope="row">${esc(c)}</th>` : `<td lang="ko">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
       </section>
 
-      <section class="lesson-block">
-        <h3 class="block-h">${mission ? "Useful expressions" : "Examples"}</h3>
-        <div class="examples" lang="ko">${l.ex.map(x => `<p class="example"><span>${esc(x)}</span>${speakBtn(x)}</p>`).join("")}</div>
+      <section class="lesson-block b-examples">
+        <div class="practice-head"><h3 class="block-h">${mission ? "Useful expressions" : "Examples"}</h3><button type="button" class="pron-toggle" aria-pressed="${state.showPron ? "true" : "false"}">Pronunciation</button></div>
+        <div class="examples${state.showPron ? " show-pron" : ""}" lang="ko">${l.ex.map(x => exampleHTML(x)).join("")}</div>
       </section>
 
       ${mission ? `
-      <section class="lesson-block">
+      <section class="lesson-block b-turn">
         <h3 class="block-h"><label for="draft">Your turn</label></h3>
         <textarea id="draft" class="draft" lang="ko" rows="8" placeholder="여기에 써 보세요…">${esc(state.drafts[id] || "")}</textarea>
         <p class="draft-meta"><span id="draftCount"></span> Saved as you type. It's also in your Notebook.</p>
@@ -596,7 +616,7 @@
       </section>` : ""}
 
       ${qs.length ? `
-      <section class="lesson-block">
+      <section class="lesson-block b-practice">
         <div class="practice-head"><h3 class="block-h">Practice</h3><span class="score" id="score"></span></div>
         <div class="qlist">${qs.map((q, k) => questionHTML(q, k + 1)).join("")}</div>
       </section>` : ""}
@@ -613,6 +633,11 @@
 
   function wireLesson(i, j) {
     const root = $("#placeBody");
+    root.querySelector(".pron-toggle")?.addEventListener("click", e => {
+      state.showPron = !state.showPron; save();
+      e.currentTarget.setAttribute("aria-pressed", String(state.showPron));
+      root.querySelector(".examples").classList.toggle("show-pron", state.showPron);
+    });
     const u = UNITS[i], l = u.lessons[j], id = lessonId(i, j), mission = l.kind === "mission";
     root.querySelector('[data-act="toggle"]').addEventListener("click", () => {
       const was = unitComplete(i);
@@ -736,10 +761,23 @@
   }
 
   /* ═════════ Question UI ═════════ */
+  function instructionFor(q) {
+    const t = q.q || "";
+    if (/pronounced\?$/.test(t)) return "Choose the correct pronunciation.";
+    if (/ → .*\(/.test(t) && q.prompt) return "Choose the correct form of the word.";
+    if (/___/.test(t)) return "Fill in the blank: choose the option that completes the sentence.";
+    if (/WRONG/.test(t)) return "Find the sentence that is not correct.";
+    if (/^"[^"]+" is…|^“/.test(t) || /^\\?"/.test(t)) return "Choose the Korean that matches the English.";
+    if (/^How do you (read|say)/.test(t)) return "Choose how this is read aloud.";
+    if (/^Which (character|word|sentence|ending|spelling|spacing|one|is|group|vowel|letter|particle|counter|pair|basic|verb|system|consonant|day|drink)/.test(t)) return "Choose the best answer.";
+    if (/ means…$|^What does|mean\?$/.test(t)) return "Choose the meaning.";
+    return "Choose the best answer.";
+  }
   function questionHTML(q, n) {
     const num = n ? `<span class="q-n">${n}</span>` : "";
     if (q.type === "order") {
       return `<div class="qcard" data-qid="${esc(q.id)}">
+        <p class="q-instr">Tap the words in the right order to build the sentence.</p>
         <p class="q-text">${num}<span>${esc(q.q)}</span></p>
         <p class="order-answer" lang="ko" aria-live="polite"></p>
         <div class="chips" lang="ko">${shuffle(q.order).map(w => `<button type="button" class="chip" data-word="${esc(w)}">${esc(w)}</button>`).join("")}</div>
@@ -748,6 +786,7 @@
       </div>`;
     }
     return `<div class="qcard" data-qid="${esc(q.id)}">
+      <p class="q-instr">${instructionFor(q)}</p>
       <p class="q-text">${num}<span>${esc(q.q)}</span>${q.prompt ? speakBtn(q.prompt) : ""}</p>
       <div class="options" role="group">${q.o.map((o, k) => `<button type="button" class="option" data-k="${k}" ${/[가-힣ㄱ-ㅣ]/.test(o) ? 'lang="ko"' : ""}>${esc(o)}</button>`).join("")}</div>
       <p class="q-feedback" aria-live="polite"></p>
@@ -1382,7 +1421,7 @@
             ${hit ? `<span class="build-hit"><span lang="ko">${esc(hit.w)}</span> ${esc(hit.m)}${speakBtn(hit.w)}</span>`
                   : `<span class="muted">${!picked.length ? "Pick a character." : more.length ? `Keep going: ${more.length} ${more.length === 1 ? "word starts" : "words start"} like this.` : "Not a word in this set. Start over and try another pair."}</span>`}
           </div>
-          ${picked.length ? `<button type="button" class="link-btn" data-act="clear">Start over</button>` : ""}
+          ${picked.length ? `<button type="button" class="btn btn-small btn-ghost build-reset" data-act="clear"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.5M3 2.5v3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Start over</button>` : ""}
           <div class="build-grid">${avail.map(c => `<button type="button" class="build-c" data-c="${c}">${c}</button>`).join("")}</div>
         </div>`;
       wireClose();
@@ -1425,7 +1464,7 @@
       const qs = mis.map(m => { if (!m.o) return { ...m, fromReview: true }; const o = shuffle(m.o); return { ...m, o, a: o.indexOf(m.o[m.a]), fromReview: true }; });
       p.innerHTML = `<p class="muted">Answer correctly to clear a question.</p><div class="qlist">${qs.map(q => {
         const src = q.src && findLesson(q.src);
-        return `<div class="mistake">${src ? `<p class="mistake-src"><span lang="ko">${esc(src.unit.place)}</span>, ${esc(src.lesson.t)}</p>` : q.id.startsWith("hj#") ? `<p class="mistake-src">Hanja quiz</p>` : q.id.startsWith("read#") ? `<p class="mistake-src">Reading: ${esc((READINGS.find(x => x.id === q.id.split("#")[1]) || {}).title || "")}</p>` : ""}${questionHTML(q)}</div>`;
+        return `<div class="mistake">${src ? `<p class="mistake-src"><span lang="ko">${esc(src.unit.place)}</span>, ${esc(src.lesson.t)}</p>` : q.id.startsWith("hj#") ? `<p class="mistake-src">Hanja quiz</p>` : q.id.startsWith("deep#") ? `<p class="mistake-src">Deep dive: ${esc((DEEP_DIVES.find(x => x.id === q.id.split("#")[1]) || {}).title || "")}</p>` : q.id.startsWith("read#") ? `<p class="mistake-src">Reading: ${esc((READINGS.find(x => x.id === q.id.split("#")[1]) || {}).title || "")}</p>` : ""}${questionHTML(q)}</div>`;
       }).join("")}</div>`;
       wireQuestions(p, qs, (q, ok) => { if (ok) { delete state.mistakes[q.id]; save(); setTimeout(() => { if (reviewTab === "mistakes") renderReview(new URLSearchParams()); }, 1600); } });
     }
@@ -1555,6 +1594,75 @@
     }
   }
 
+  /* ═════════ 원고지 (manuscript paper) practice ═════════ */
+  const WG_COLS = 20;
+  function wongojiLayout(title, name, body) {
+    const rows = [];
+    const blank = () => Array(WG_COLS).fill("");
+    rows.push(blank());
+    const tRow = blank(), tChars = [...title.trim()].slice(0, WG_COLS);
+    const ts = Math.max(0, Math.floor((WG_COLS - tChars.length) / 2));
+    tChars.forEach((ch, k) => { tRow[ts + k] = ch === " " ? "" : ch; });
+    rows.push(tRow);
+    const nRow = blank(), nChars = [...name.trim()].slice(0, WG_COLS - 2);
+    nChars.forEach((ch, k) => { nRow[WG_COLS - 2 - nChars.length + k] = ch === " " ? "" : ch; });
+    rows.push(nRow);
+    rows.push(blank());
+
+    const PUNCT = /[.,?!"'”’)…]/;
+    body.replace(/\r/g, "").split(/\n+/).filter(p => p.trim()).forEach(par => {
+      let row = blank(), col = 1; // first cell empty for a new paragraph
+      const pushCell = (v, isPunct) => {
+        if (col >= WG_COLS) {
+          if (isPunct) { row[WG_COLS - 1] += v; return; } // share the last cell
+          rows.push(row); row = blank(); col = 0;
+        }
+        row[col++] = v;
+      };
+      const chars = [...par.trim().replace(/\.\.\./g, "…")];
+      for (let k = 0; k < chars.length; k++) {
+        const ch = chars[k], prev = chars[k - 1];
+        if (ch === " ") {
+          if (col === 0 || col >= WG_COLS || prev === "." || prev === ",") continue;
+          col++;
+          continue;
+        }
+        if (/[0-9a-z]/.test(ch)) {
+          const nxt = chars[k + 1];
+          if (nxt && /[0-9a-z]/.test(nxt)) { pushCell(ch + nxt, false); k++; } else pushCell(ch, false);
+          continue;
+        }
+        pushCell(ch, PUNCT.test(ch));
+        if ((ch === "?" || ch === "!") && chars[k + 1] && chars[k + 1] !== " ") { if (col < WG_COLS) col++; }
+      }
+      rows.push(row);
+    });
+    while (rows.length < 10) rows.push(blank());
+    return rows;
+  }
+  function wongojiHTML(rows) {
+    return `<div class="wg-paper" role="img" aria-label="Manuscript paper preview">${rows.map(r => `<div class="wg-row">${r.map(c => `<span class="wg-cell${c.length > 1 ? " two" : ""}">${esc(c)}</span>`).join("")}</div>`).join("")}</div>`;
+  }
+  function wongojiToolHTML() {
+    return `
+      <section class="lesson-block b-turn wg-tool">
+        <h3 class="block-h">Try it</h3>
+        <p class="muted">Type a title, your name and a few sentences. The grid lays them out by the rules above.</p>
+        <div class="field-row">
+          <label class="field"><span>Title</span><input id="wgTitle" class="input-ko" lang="ko" type="text" value="나의 하루" /></label>
+          <label class="field"><span>Name</span><input id="wgName" class="input-ko" lang="ko" type="text" value="김민지" /></label>
+        </div>
+        <label class="field" style="margin-top:.8rem"><span>Text</span><textarea id="wgBody" class="draft" lang="ko" rows="4">오늘은 아침 7시에 일어났다. 날씨가 정말 좋았다! 친구와 함께 공원에 갔다.
+점심에는 김밥을 먹었다. 맛있었을까? 물론이다.</textarea></label>
+        <div class="wg-wrap" id="wgOut"></div>
+      </section>`;
+  }
+  function wireWongoji() {
+    const run = () => { $("#wgOut").innerHTML = wongojiHTML(wongojiLayout($("#wgTitle").value, $("#wgName").value, $("#wgBody").value)); };
+    ["#wgTitle", "#wgName", "#wgBody"].forEach(s => $(s).addEventListener("input", run));
+    run();
+  }
+
   /* ═════════ Deep dives (premium) ═════════ */
   function renderDeep(id) {
     DEEP_DIVES.sort((a, b) => levelIdx(a.level) - levelIdx(b.level));
@@ -1603,9 +1711,17 @@
               ${open && s.ex ? `<div class="examples" lang="ko">${s.ex.map(x => `<p class="example"><span>${esc(x)}</span>${speakBtn(x)}</p>`).join("")}</div>` : ""}
             </section>`).join("")}
         </div>
+        ${open && d.tool === "wongoji" ? wongojiToolHTML() : ""}
+        ${open && d.q ? `<section class="lesson-block b-practice"><div class="practice-head"><h3 class="block-h">Practice</h3><span class="score" id="score"></span></div><div class="qlist">${d.q.map((q, n) => questionHTML({ id: `deep#${d.id}#${n}`, type: "mc", q: q[0], o: q[1], a: q[2], why: q[3] }, n + 1)).join("")}</div></section>` : ""}
         ${open ? "" : `<div class="locked-card">${lockIcon}<p><strong>The rest of this deep dive is premium.</strong> ${d.sections.length - 1} more ${d.sections.length - 1 === 1 ? "section" : "sections"}, with tables and examples.</p></div>`}
         ${nextD ? `<a class="deep-next" href="#/deep/${nextD.id}"><span class="kicker">Next deep dive</span><span class="deep-title">${esc(nextD.title)}</span><span class="deep-ko" lang="ko">${esc(nextD.titleKo)}</span></a>` : ""}
       </article>`;
+    if (open && d.tool === "wongoji") wireWongoji();
+    if (open && d.q) {
+      const qs = d.q.map((q, n) => ({ id: `deep#${d.id}#${n}`, type: "mc", q: q[0], o: q[1], a: q[2], why: q[3] }));
+      let right = 0, n = 0;
+      wireQuestions(box, qs, (q, ok) => { n++; if (ok) right++; $("#score").textContent = `${right} of ${qs.length} correct`; recordResult(q, ok); });
+    }
   }
 
   /* ═════════ Start screen: pastel sky, twinkling stars, butterflies ═════════ */
@@ -1675,6 +1791,8 @@
     setTimeout(() => {
       sp.hidden = true; sp.classList.remove("leaving");
       document.body.classList.remove("splash-on");
+      document.documentElement.classList.remove("splash-pending");
+      document.documentElement.classList.add("no-splash");
       cancelAnimationFrame(splashRAF); hideSplash.cleanup && hideSplash.cleanup();
       then && then();
     }, 550);
@@ -1835,6 +1953,11 @@
         <label class="switch"><input type="checkbox" id="setSplash" ${state.showSplash !== false ? "checked" : ""} /><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span class="switch-label">Show the start screen when the app opens</span></label>
       </section>
       <section class="set-block">
+        <h2 class="sub-h">Guide</h2>
+        <p class="backup-sub">The red crayon notes that show where to start.</p>
+        <div class="backup-actions"><button class="btn btn-small btn-ghost" id="guideAgain" type="button">Show the guide again</button></div>
+      </section>
+      <section class="set-block">
         <h2 class="sub-h">Audio</h2>
         <label class="switch"><input type="checkbox" id="setTTS" ${state.ttsFallback !== false ? "checked" : ""} /><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span class="switch-label">Use the browser's voice when a recording is missing</span></label>
         <p class="backup-sub">Recordings are played from the <code>voices</code> folder. The list has one line per file: its name, the Korean text, and where it appears.</p>
@@ -1848,6 +1971,7 @@
     renderBackupStatus();
     $("#voiceCount").textContent = `${collectVoiceLines().length} lines`;
     $("#voiceListBtn").addEventListener("click", downloadVoiceList);
+    $("#guideAgain").addEventListener("click", () => { state.guideSeen = false; save(); location.hash = "#/"; setTimeout(showGuide, 400); });
     $("#setRoam").addEventListener("change", e => { state.freeRoam = e.target.checked; $("#freeRoam").checked = state.freeRoam; save(); });
     $("#setSplash").addEventListener("change", e => { state.showSplash = e.target.checked; save(); });
     $("#setTTS").addEventListener("change", e => { state.ttsFallback = e.target.checked; save(); });
@@ -1860,6 +1984,98 @@
     });
   }
 
+  /* ═════════ First-run guide, drawn in red crayon ═════════ */
+  function maybeShowGuide() {
+    if (state.guideSeen) return;
+    setTimeout(() => {
+      const v = $$(".view").find(x => !x.hidden)?.dataset.view;
+      if (v === "journey" && !state.guideSeen && $("#guide").hidden) showGuide();
+    }, 350);
+  }
+  function visibleNav(key) {
+    return [...$$(`.mainnav [data-nav="${key}"], .tabbar [data-nav="${key}"]`)].find(el => el.offsetParent !== null);
+  }
+  function showGuide() {
+    const g = $("#guide");
+    window.scrollTo(0, 0);
+    g.hidden = false;
+    document.body.classList.add("guide-on");
+    const steps = [
+      { el: $("#heroStart"), text: "Start here! One neighborhood at a time, in order." },
+      { el: $("#placementBtn"), text: "Not a beginner? Find your level first." },
+      { el: visibleNav("diary"), text: "Write a few lines every day." },
+      { el: visibleNav("review"), text: "Missed questions come back here." },
+      { el: $("#notesFab"), text: "Jot a note from anywhere." }
+    ].filter(s => s.el && (innerWidth >= 700 || !/Not a beginner|Jot a note/.test(s.text)));
+    const draw = () => {
+      const W = innerWidth, H = innerHeight;
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const loop = r => {
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const rx = r.width / 2 + 14, ry = r.height / 2 + 12;
+        let d = "";
+        const start = rnd(0, Math.PI), turns = Math.PI * 2 + .45;
+        for (let k = 0; k <= 34; k++) {
+          const t = start + (turns * k) / 34;
+          const j = 1 + rnd(-.05, .05);
+          const x = cx + Math.cos(t) * rx * j, y = cy + Math.sin(t) * ry * j;
+          d += (k ? " L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+        }
+        return { d, cx, cy, rx, ry };
+      };
+      const lines = (text, max) => {
+        const words = text.split(" "), out = [""];
+        words.forEach(w => { if ((out[out.length - 1] + " " + w).trim().length > max) out.push(w); else out[out.length - 1] = (out[out.length - 1] + " " + w).trim(); });
+        return out;
+      };
+      let svg = "";
+      const placed = [];
+      steps.forEach((s, n) => {
+        const r = s.el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > H) return;
+        const o = loop(r);
+        const ls = lines(s.text, W < 600 ? 18 : 24);
+        const above = r.top > H * .55;
+        let lx = Math.min(Math.max(o.cx + (n % 2 ? 40 : -40), 110), W - 110);
+        let ly = above ? r.top - 70 - (ls.length - 1) * 24 : r.bottom + 64;
+        placed.forEach(p => { if (Math.abs(p.x - lx) < 200 && Math.abs(p.y - ly) < 60) ly += above ? -60 : 60; });
+        placed.push({ x: lx, y: ly });
+        const ay = above ? ly + (ls.length - 1) * 24 + 10 : ly - 26;
+        const ey = above ? o.cy - o.ry : o.cy + o.ry;
+        const midx = (lx + o.cx) / 2 + (n % 2 ? 30 : -30);
+        svg += `<path class="cr" d="${o.d}"/>`;
+        svg += `<path class="cr thin" d="M${lx} ${ay} Q${midx} ${(ay + ey) / 2} ${o.cx} ${ey + (above ? -4 : 4)}"/>`;
+        const tip = { x: o.cx, y: ey + (above ? -4 : 4) };
+        const dir = above ? 1 : -1;
+        svg += `<path class="cr thin" d="M${tip.x - 9} ${tip.y - 10 * dir} L${tip.x} ${tip.y} L${tip.x + 10} ${tip.y - 9 * dir}"/>`;
+        svg += `<text class="cr-text" x="${lx}" y="${ly}" text-anchor="middle">${ls.map((l, k) => `<tspan x="${lx}" dy="${k ? 24 : 0}">${esc(l)}</tspan>`).join("")}</text>`;
+      });
+      g.innerHTML = `
+        <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+          <defs><filter id="crayon"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter></defs>
+          <g filter="url(#crayon)">${svg}</g>
+        </svg>
+        <div class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+          <p class="guide-title" id="guideTitle">Welcome! Here's how it works.</p>
+          <ul class="sr-only">${steps.map(s => `<li>${esc(s.text)}</li>`).join("")}</ul>
+          <button class="btn btn-primary" type="button" id="guideDone">Got it</button>
+        </div>`;
+      $("#guideDone").addEventListener("click", closeGuide);
+      $("#guideDone").focus({ preventScroll: true });
+    };
+    draw();
+    showGuide.redraw = () => { if (!g.hidden) draw(); };
+    window.addEventListener("resize", showGuide.redraw);
+  }
+  function closeGuide() {
+    const g = $("#guide");
+    g.hidden = true; g.innerHTML = "";
+    document.body.classList.remove("guide-on");
+    window.removeEventListener("resize", showGuide.redraw);
+    state.guideSeen = true; save();
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#guide").hidden) closeGuide(); });
+
   /* ═════════ Init ═════════ */
   function init() {
     renderLegend();
@@ -1870,13 +2086,18 @@
     $("#heroStart").addEventListener("click", () => openUnit(currentUnit()));
     $("#placementBtn").addEventListener("click", e => openPlacement(e.currentTarget));
     $("#notesFab").addEventListener("click", toggleNotes);
+    const toTop = $("#toTop");
+    const onScroll = () => { toTop.hidden = window.scrollY < 600; };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+    toTop.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); $("#main").focus?.({ preventScroll: true }); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#notesPanel").hidden && !drawer.classList.contains("open")) toggleNotes(); });
-    $("#splashGo").addEventListener("click", () => hideSplash());
+    $("#splashGo").addEventListener("click", () => hideSplash(maybeShowGuide));
     $("#splashPlace").addEventListener("click", () => hideSplash(() => openPlacement()));
     let seen = false;
     try { seen = sessionStorage.getItem("lss:splash") === "1"; } catch {}
     const atHome = !location.hash || location.hash === "#/" || location.hash === "#";
-    if (atHome && !seen && state.showSplash !== false) showSplash();
+    if (document.documentElement.classList.contains("splash-pending")) showSplash();
+    else { $("#splash").hidden = true; maybeShowGuide(); }
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
     route();
     const scroller = $("#mapScroll"), u = UNITS[currentUnit()];

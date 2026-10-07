@@ -40,6 +40,33 @@ const DEEP_DIVES = [
     ]
   },
   {
+    id: "wongoji", title: "Writing on manuscript paper", titleKo: "원고지 쓰기", level: "B1", places: ["insadong"],
+    lede: "Korean school essays, writing contests and the TOPIK writing answer sheet all use a grid: one cell per character. The grid has its own small rules.",
+    tool: "wongoji",
+    sections: [
+      { h: "The page layout",
+        p: ["Leave the first line empty and write the title in the middle of the second line. Write your name on the next line toward the right, leaving the last two cells empty. Skip a line, then start the text."] },
+      { h: "Cells and spaces",
+        table: { head: ["What", "How"], rows: [
+          ["Hangul", "One syllable per cell."],
+          ["A space between words", "One empty cell. If the space falls at the start of a line, don't leave it; start writing in the first cell."],
+          ["A new paragraph", "Leave the first cell empty."],
+          ["Numbers and lowercase letters", "Two per cell: 20, 19, ok."],
+          ["Capital letters", "One per cell."]] } },
+      { h: "Punctuation",
+        table: { head: ["Mark", "Rule"], rows: [
+          [". and ,", "Take one cell. Don't leave a cell after them."],
+          ["? and !", "Take one cell, then leave one cell empty."],
+          ["…", "Six dots across two cells (……)."],
+          ["At the end of a line", "If a mark would fall into the first cell of the next line, write it in the last cell together with the last letter, or just outside the grid."]] },
+        ex: ["오늘은 날씨가 맑았다.", "정말 그럴까? 나는 잘 모르겠다."] }
+    ],
+    q: [["Where does the title go?", ["First line, left", "Second line, centered", "Last line, right", "Anywhere"], 1, "Leave line one empty; center the title on line two."],
+        ["How do you start a new paragraph?", ["Leave two cells empty", "Leave the first cell empty", "Skip a whole line", "Start in the first cell"], 1, "One empty cell."],
+        ["After a period (.), you…", ["leave one cell empty", "don't leave a cell", "start a new line", "leave two cells"], 1, "No empty cell after . or ,."],
+        ["How many digits go in one cell?", ["One", "Two", "Three", "As many as fit"], 1, "Numbers and lowercase letters: two per cell."]]
+  },
+  {
     id: "addressing-people", title: "씨, 님, 선생님: what to call people", titleKo: "호칭의 기초", level: "A1", places: ["sinchon"],
     lede: "Korean rarely uses 'you'. Instead, people call each other by name plus a title, and choosing the title is half the politeness.",
     sections: [
