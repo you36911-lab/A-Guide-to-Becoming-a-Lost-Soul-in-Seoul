@@ -1268,6 +1268,7 @@
     loadFullDictionary(() => {
       if ($("[data-view='dictionary']").hidden) return;
       run();
+      maybeShowGuide();
       if (q0) { const first = $("#dictList [data-i]"); if (first && first.getAttribute("aria-expanded") !== "true") toggleEntry(first); }
     });
     if (q0) { const first = $("#dictList [data-i]"); if (first) toggleEntry(first); }
@@ -1889,7 +1890,7 @@
           <h3 class="block-h">Words</h3>
           <ul class="gloss" lang="ko">${r.gloss.map(([w, m]) => `<li><a href="#/dictionary?q=${encodeURIComponent(w.split(/[ /]/)[0])}">${esc(w)}</a><span>${esc(m)}</span></li>`).join("")}</ul>
         </section>
-        <section class="lesson-block">
+        <section class="lesson-block b-practice">
           <div class="practice-head"><h3 class="block-h">Check your understanding</h3><span class="score" id="score"></span></div>
           <div class="qlist">${qs.map((q, n) => questionHTML(q, n + 1)).join("")}</div>
         </section>
@@ -2027,6 +2028,7 @@
   }
 
   /* ═════════ Guide: one crayon note at a time, on every screen's first visit ═════════ */
+  // [selector, text, options]; text may be a function of the current page
   const GUIDES = {
     journey: [
       ["#heroStart", "Start here. One neighborhood at a time, in order."],
@@ -2034,68 +2036,100 @@
       ["#today .today-continue", "Every day: pick up where you left off."],
       ["nav:diary", "Write a few lines in Korean every day."],
       ["nav:review", "Questions you miss come back here."],
-      ["#notesFab", "Jot a note from any screen."]
+      ["#notesFab", "Jot a note from any screen."],
+      ["#helpBtn", "Tap ? any time to see this guide again."]
     ],
     place: [
       [".place-badges", "Your level and this place's number on the route."],
-      [".toc", "All lessons in this place. Go in order."],
-      ["#lessonArea .lesson-no, #startUnit", "Start the lesson here."],
+      [".toc-item[aria-current='page'], .toc", () => $(".toc-item[aria-current='page']") ? "You are here. The other lessons in this place are listed in order." : "All lessons in this place. Go in order.", { shape: "circle" }],
+      ["#lessonArea .ln-big, #startUnit", () => $("#lessonArea .ln-big") ? "This is the lesson you're on." : "Start the first lesson here.", { shape: "circle" }],
       [".pron-toggle", "Show how each example is really pronounced."],
       [".b-practice", "One question for every key idea."],
       ["[data-act='toggle']", "Mark the lesson done to move on."],
       [".back-link", "Choose another place on the map."]
     ],
     reading: [
-      [".read-index li a, .read-chat, .read-prose, .read-sign", "A text for every neighborhood. Tap to listen."],
-      [".gloss", "Key words. Tap one to open the dictionary."],
-      [".b-practice, .qlist", "Check that you understood."]
+      [".deep-level", "A text for every neighborhood, grouped by level. Locked ones open as you move along the map.", { shape: "circle" }]
+    ],
+    "reading-article": [
+      [".read-chat, .read-prose, .read-sign", "Read it, and tap the speaker to hear a line.", { shape: "circle" }],
+      [".gloss", "Key words. Tap one to open the dictionary.", { shape: "circle" }],
+      ["#readingBody .b-practice", "Check that you understood."],
+      ["#readToggle", "Mark it as read when you're done."]
     ],
     diary: [
       [".diary-prompt", "Today's prompt, matched to your level."],
-      ["#diaryIn", "Write here. It saves as you type."],
+      ["#diaryIn", "Write here. It saves as you type.", { shape: "circle" }],
       ["#diaryCheck", "Check for common spelling mistakes."]
     ],
     lab: [
-      ["#pronIn", "Type any word to see how it's pronounced, and why."],
-      ["#conjIn", "Conjugate any verb, irregular ones too."],
-      ["#spellIn", "Paste your writing to catch common mistakes."]
+      ["#tool-pron .tool-head", "Type any word to see how it's pronounced, and why.", { shape: "circle" }],
+      ["#tool-conj .tool-head", "Conjugate any verb, irregular ones too.", { shape: "circle" }],
+      ["#tool-pron .tool-toggle", "Fold a tool away when you don't need it."]
     ],
     dictionary: [
       ["#dictIn", "Search in Korean, English, or by initials like ㅎㄱ."],
-      ["#typeFilter", "Filter grammar patterns, idioms and proverbs."],
+      ["#typeFilter", "Filter grammar patterns, idioms and proverbs.", { shape: "circle" }],
       ["#dictList .dict-head", "Open an entry for pronunciation and examples."]
     ],
     hanja: [
-      [".week-row", "Start with the days of the week."],
+      [".week-row", "Start with the days of the week.", { shape: "circle" }],
       ["#hjQuiz", "Quiz yourself on the characters you know."],
       ["#hjBuild", "Build words from characters."]
     ],
     deep: [
-      [".deep-index li a, .deep-head", "Nice-to-know notes, grouped by level."]
+      [".deep-level", "Nice-to-know notes for every level. Not required, but they make your Korean richer.", { shape: "circle" }]
+    ],
+    "deep-article": [
+      [".deep-head .lv-tag", "The level this note belongs to."],
+      [".deep-body section", "Read at your own pace; nothing here is required.", { shape: "circle" }],
+      [".deep-article .b-practice, .wg-tool", "Try it out at the end."],
+      [".deep-places a", "The place where the basics are taught."]
     ],
     review: [
       [".segmented", "Saved words and missed questions."],
-      ["#startCards, .review-start, .empty", "Review a little every day."]
+      ["#startCards, .review-start, .empty", "Review a little every day.", { shape: "circle" }]
     ],
     notebook: [
-      ["#noteForm", "Your notes from anywhere in the app."],
+      ["#noteForm", "Your notes from anywhere in the app.", { shape: "circle" }],
       [".segmented", "Mission writing is kept here too."]
     ]
   };
+  function guideKey() {
+    const [path] = (location.hash.replace(/^#\/?/, "") || "").split("?");
+    const seg = path.split("/");
+    const v = $$(".view").find(x => !x.hidden)?.dataset.view;
+    if (!v) return null;
+    if ((v === "reading" || v === "deep") && seg[1]) return v + "-article";
+    return v;
+  }
+  function guideSteps(key) {
+    return (GUIDES[key] || []).map(([sel, text, opt]) => ({ sel, text, opt: opt || {} })).filter(s => guideTarget(s.sel));
+  }
   let guideRun = null;
   const visible = el => el && el.offsetParent !== null && el.getClientRects().length;
   function guideTarget(sel) {
     if (sel.startsWith("nav:")) { const k = sel.slice(4); return [...$$(`.mainnav [data-nav="${k}"], .tabbar [data-nav="${k}"]`)].find(visible); }
-    return [...$$(sel)].find(visible);
+    // try each comma-separated part in order, so the first listed wins
+    for (const part of sel.split(",")) { const el = [...$$(part.trim())].find(visible); if (el) return el; }
+    return null;
   }
   function maybeShowGuide() {
-    setTimeout(() => {
+    clearTimeout(maybeShowGuide.t);
+    maybeShowGuide.t = setTimeout(() => {
       if (!$("#splash").hidden || !$("#guide").hidden || drawer.classList.contains("open")) return;
-      const v = $$(".view").find(x => !x.hidden)?.dataset.view;
-      if (!v || !GUIDES[v] || state.guides[v]) return;
-      const steps = GUIDES[v].map(([sel, text]) => ({ sel, text })).filter(s => guideTarget(s.sel));
-      if (steps.length) startGuide(v, steps);
-    }, 450);
+      const key = guideKey();
+      if (!key || !GUIDES[key] || state.guides[key]) return;
+      if (key === "dictionary" && fullState === "loading") return; // shown once the list settles
+      const steps = guideSteps(key);
+      if (steps.length) startGuide(key, steps);
+    }, 500);
+  }
+  function replayGuide() {
+    if (!$("#guide").hidden) closeGuide();
+    const key = guideKey();
+    const steps = key ? guideSteps(key) : [];
+    if (steps.length) startGuide(key, steps); else toast("There's no guide for this screen.");
   }
   function startGuide(view, steps) {
     guideRun = { view, steps, i: 0 };
@@ -2111,16 +2145,23 @@
     const g = $("#guide");
     if (!el) { nextGuideStep(1); return; }
     const r0 = el.getBoundingClientRect();
-    if (r0.top < 80 || r0.bottom > innerHeight - 120) { el.scrollIntoView({ block: "center" }); }
+    if (r0.top < 90 || r0.bottom > innerHeight - 130) {
+      // jump (not smooth-scroll) so the drawing lands where the element really is
+      const top = window.scrollY + r0.top - Math.max(100, (innerHeight - Math.min(r0.height, innerHeight * .5)) / 2);
+      window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+      if (!s._waited) { s._waited = true; requestAnimationFrame(() => requestAnimationFrame(drawGuideStep)); return; }
+    }
+    s._waited = false;
+    const text = typeof s.text === "function" ? s.text() : s.text;
     const r = el.getBoundingClientRect();
     const W = innerWidth, H = innerHeight;
     // a calm hand-drawn loop: smooth wobble, slight overshoot where the pen meets the start
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const rx = Math.min(r.width / 2 + 16, W / 2 - 8), ry = r.height / 2 + 13;
-    const wideT = rx > 170 || r.width / Math.max(r.height, 1) > 4.5;
+    const wideT = s.opt.shape !== "circle" && (rx > 170 || r.width / Math.max(r.height, 1) > 4.5);
     const above = wideT ? r.bottom + 140 > H : cy > H * .55;
     const a0 = -Math.PI * .62, phase = i * 1.3;
-    const wide = rx > 170 || r.width / Math.max(r.height, 1) > 4.5;
+    const wide = wideT;
     let d = "";
     if (wide) {
       const x0 = Math.max(r.left - 6, 8), x1 = Math.min(r.right + 6, W - 8), yb = above ? r.top - 9 : r.bottom + 9;
@@ -2137,14 +2178,15 @@
       const shrink = 1 - .05 * (k / 64); // ends slightly inside the start, like a real pen
       d += (k ? " L" : "M") + (cx + Math.cos(t) * rx * wob * shrink).toFixed(1) + " " + (cy + Math.sin(t) * ry * wob * shrink).toFixed(1);
     }
-    const lines = []; s.text.split(" ").forEach(w => { const l = lines[lines.length - 1]; if (!l || (l + " " + w).length > (W < 600 ? 22 : 30)) lines.push(w); else lines[lines.length - 1] = l + " " + w; });
+    const lines = []; text.split(" ").forEach(w => { const l = lines[lines.length - 1]; if (!l || (l + " " + w).length > (W < 600 ? 22 : 30)) lines.push(w); else lines[lines.length - 1] = l + " " + w; });
     const lx = Math.min(Math.max(cx, 130), W - 130);
-    const ly = wideT ? (above ? r.top - 74 - (lines.length - 1) * 26 : r.bottom + 76) : (above ? cy - ry - 64 - (lines.length - 1) * 26 : cy + ry + 62);
+    let ly = wideT ? (above ? r.top - 74 - (lines.length - 1) * 26 : r.bottom + 76) : (above ? cy - ry - 64 - (lines.length - 1) * 26 : cy + ry + 62);
+    ly = Math.min(Math.max(ly, 110), H - 40 - (lines.length - 1) * 26);
     const ay = above ? ly + (lines.length - 1) * 26 + 12 : ly - 28;
     const ey = wide ? (above ? r.top - 18 : r.bottom + 18) : (above ? cy - ry - 4 : cy + ry + 4);
     const bend = lx < cx ? 26 : -26;
     const dir = above ? 1 : -1;
-    const cardTop = !above;
+    const cardTop = above; // keep the card on the opposite side of the screen from the target
     g.innerHTML = `
       <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <defs><filter id="crayon" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.1"/></filter></defs>
@@ -2157,7 +2199,7 @@
       </svg>
       <div class="guide-card${cardTop ? " at-top" : ""}" role="dialog" aria-modal="true" aria-labelledby="guideText">
         <p class="guide-step">${i + 1} / ${steps.length}</p>
-        <p class="sr-only" id="guideText">${esc(s.text)}</p>
+        <p class="sr-only" id="guideText">${esc(text)}</p>
         <div class="guide-btns">
           <button class="link-btn" type="button" data-g="skip">Skip</button>
           ${i > 0 ? `<button class="btn btn-small btn-ghost" type="button" data-g="back">Back</button>` : ""}
@@ -2201,6 +2243,7 @@
     $("#heroStart").addEventListener("click", () => openUnit(currentUnit()));
     $("#placementBtn").addEventListener("click", e => openPlacement(e.currentTarget));
     $("#notesFab").addEventListener("click", toggleNotes);
+    $("#helpBtn").addEventListener("click", replayGuide);
     const toTop = $("#toTop");
     const onScroll = () => { toTop.hidden = window.scrollY < 600; };
     window.addEventListener("scroll", onScroll, { passive: true }); onScroll();

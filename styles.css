@@ -295,7 +295,7 @@ body.splash-on { overflow: hidden; }
 .block-h { font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 1rem; }
 .key-ideas { list-style: none; counter-reset: k; margin: 0; padding: 0; display: grid; gap: .9rem; }
 .key-ideas li { counter-increment: k; display: grid; grid-template-columns: 2.2rem 1fr; gap: .5rem; line-height: 1.7; }
-.key-ideas li::before { content: counter(k, decimal-leading-zero); font-family: var(--serif); font-weight: 700; font-size: 1.15rem; color: #3C7A57; line-height: 1.5; }
+.key-ideas li::before { content: counter(k, decimal-leading-zero); font-family: var(--serif); font-weight: 700; font-size: 1.15rem; color: #9A6B12; line-height: 1.5; }
 .examples { display: grid; gap: .5rem; }
 .example {
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
@@ -778,7 +778,7 @@ html { scrollbar-width: thin; scrollbar-color: #E6CCD3 transparent; }
 
 /* section color blocks in lessons */
 .lesson-block.b-ideas, .lesson-block.b-examples, .lesson-block.b-practice, .lesson-block.b-turn { padding: 1.5rem clamp(1rem, 3vw, 1.75rem); border-radius: var(--r-l); }
-.lesson-block.b-ideas { background: #EAF5EE; }
+.lesson-block.b-ideas { background: #FFF8E3; }
 .lesson-block.b-check { background: #FFEDE4; padding: 1.5rem clamp(1rem, 3vw, 1.75rem); border-radius: var(--r-l); }
 .lesson-block.b-examples { background: #EEF5FB; }
 .lesson-block.b-practice { background: #EFE9FB; }
@@ -879,3 +879,15 @@ body.guide-on { overflow: hidden; }
 .tool-toggle:hover { border-color: var(--ink); }
 .tool.closed .tool-toggle { transform: rotate(-90deg); }
 .tool-body { margin-top: 1.1rem; }
+
+.help-btn { background: none; border: 0; cursor: pointer; }
+.help-btn:hover { color: var(--accent-ink); }
+.dict-search .filter { justify-self: start; }
+/* on the yellow key-ideas block the highlighter needs a deeper tone to show */
+.b-ideas .hl { background: linear-gradient(transparent 52%, #F2C35E 52%, #F2C35E 92%, transparent 92%); }
+
+/* fun fact: no card, just a rose rule on the left (option B) */
+.fact { background: none !important; border: 0 !important; border-left: 2px solid var(--accent) !important; border-radius: 0 !important; padding: .15rem 0 .15rem 1rem !important; }
+.fact-label { color: var(--accent-ink); font-size: .9rem; }
+.fact-label::before { content: none; }
+.fact p:last-child { color: var(--ink-2); font-size: .9rem; }
