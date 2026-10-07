@@ -2133,9 +2133,34 @@
     if (!$("#guide").hidden) closeGuide();
     const key = guideKey();
     const steps = key ? guideSteps(key) : [];
-    if (steps.length) startGuide(key, steps); else toast("There's no guide for this screen.");
+    if (steps.length) startGuide(key, steps, key === "journey"); else toast("There's no guide for this screen.");
   }
-  function startGuide(view, steps) {
+  function showIntro(then) {
+    const g = $("#guide");
+    g.hidden = false;
+    document.body.classList.add("guide-on");
+    g.innerHTML = `
+      <div class="guide-intro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+        <p class="kicker">Before you start</p>
+        <h2 class="intro-title" id="introTitle">Welcome, wanderer.</h2>
+        <p class="intro-lead">This guide draws on both the textbooks Korean students use at school and materials written for learners of Korean. Rather than focusing on conversation, it builds your grammatical groundwork: how Korean sounds, how it's spelled, and why its grammar works the way it does.</p>
+        <h3 class="intro-h">How it works</h3>
+        <ul class="intro-list-how">
+          <li>Each neighborhood is a unit, and each time of day is a level, from dawn (A0) to night (C2).</li>
+          <li>Every lesson has key ideas, examples and one practice question per idea, and every neighborhood ends with a writing mission.</li>
+          <li>Reading, a daily diary and deep dives round it out.</li>
+        </ul>
+        <div class="intro-actions">
+          <button class="btn btn-primary" type="button" id="introGo">Show me around</button>
+          <button class="link-btn" type="button" id="introSkip">Skip the tour</button>
+        </div>
+      </div>`;
+    $("#introGo").focus({ preventScroll: true });
+    $("#introGo").addEventListener("click", () => { state.introSeen = true; save(); g.innerHTML = ""; then(); });
+    $("#introSkip").addEventListener("click", () => { state.introSeen = true; state.guides.journey = true; save(); g.hidden = true; g.innerHTML = ""; document.body.classList.remove("guide-on"); });
+  }
+  function startGuide(view, steps, withIntro) {
+    if (view === "journey" && (withIntro || !state.introSeen)) { showIntro(() => startGuide(view, steps, false)); return; }
     guideRun = { view, steps, i: 0 };
     $("#guide").hidden = false;
     document.body.classList.add("guide-on");
@@ -2246,6 +2271,7 @@
   }
   document.addEventListener("keydown", e => {
     if ($("#guide").hidden) return;
+    if (e.key === "Escape" && $("#introSkip")) { $("#introSkip").click(); return; }
     if (e.key === "Escape") closeGuide();
     if (e.key === "ArrowRight") nextGuideStep(1);
     if (e.key === "ArrowLeft") nextGuideStep(-1);

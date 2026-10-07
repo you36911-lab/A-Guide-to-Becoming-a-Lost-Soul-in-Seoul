@@ -904,3 +904,18 @@ body.guide-on { overflow: hidden; }
 @media (min-width: 701px) and (max-width: 960px) { .guide-card { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
 .today-row { display: flex; align-items: baseline; gap: .7rem; }
 .today-row .today-meta { margin-top: 0; line-height: 1.35; }
+
+/* intro card before the Journey tour */
+.guide-intro {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(560px, calc(100% - 2rem)); max-height: calc(100% - 2rem); overflow-y: auto;
+  background: var(--surface); border: 2px solid #D7443A; border-radius: var(--r-l);
+  padding: clamp(1.4rem, 4vw, 2.2rem); box-shadow: 0 24px 60px rgba(42, 36, 34, .16);
+  display: grid; gap: .8rem;
+}
+.intro-title { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4vw, 2.4rem); line-height: 1.1; }
+.intro-lead { color: var(--ink); line-height: 1.7; }
+.intro-h { font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); margin-top: .4rem; }
+.intro-list-how { margin: 0; padding-left: 1.1rem; display: grid; gap: .45rem; color: var(--ink-2); line-height: 1.6; }
+.intro-list-how li::marker { color: #D7443A; }
+.intro-actions { display: flex; align-items: center; gap: 1rem; margin-top: .6rem; flex-wrap: wrap; }

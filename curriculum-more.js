@@ -64,6 +64,20 @@ const MORE_LESSONS = {
 
   /* ── A2 노량진 ── */
   noryangjin: [
+    { at: 0, t: "Parts of a sentence", k: "문장 성분",
+      s: "School grammar names seven jobs a word or phrase can do in a sentence. Particles and endings usually tell you which job.",
+      p: ["Main parts (주성분): subject 주어, predicate 서술어, object 목적어, complement 보어 (the noun before 되다 / 아니다: 물이 얼음이 되었다).",
+          "Supporting parts (부속 성분): 관형어 describes a noun (새 책, 내가 산 책); 부사어 describes a verb, adjective or the whole sentence (빨리, 학교에서).",
+          "Independent part (독립 성분): 독립어 stands apart from the rest: 아, 네, 민수야.",
+          "A sentence with one subject–predicate pair is 홑문장; with two or more, 겹문장. You'll build those in Seongsu."],
+      table: { head: ["Part", "Korean term", "Example"], rows: [
+        ["Subject", "주어", "민수가 책을 읽는다."], ["Predicate", "서술어", "민수가 책을 읽는다."], ["Object", "목적어", "민수가 책을 읽는다."],
+        ["Complement", "보어", "물이 얼음이 되었다."], ["Noun modifier", "관형어", "새 책을 샀다."], ["Adverbial", "부사어", "빨리 읽었다."], ["Independent", "독립어", "아, 비가 온다."]] },
+      ex: ["민수가 도서관에서 새 책을 빨리 읽었다.", "아, 물이 얼음이 되었네."],
+      q: [["In 물이 얼음이 되었다, 얼음이 is the…", ["subject (주어)", "object (목적어)", "complement (보어)", "adverbial (부사어)"], 2, "The noun before 되다 / 아니다 is the 보어."],
+          ["In 새 책을 샀다, 새 is a…", ["관형어", "부사어", "주어", "독립어"], 0, "It describes the noun 책."],
+          ["In 민수야, 밥 먹었어?, 민수야 is a…", ["주어", "독립어", "목적어", "서술어"], 1, "A call-out stands apart: 독립어."],
+          ["민수가 학교에 가고 지수가 집에 왔다 is a…", ["홑문장", "겹문장", "명사절", "관형절"], 1, "Two subject–predicate pairs: 겹문장."]] },
     { t: "With and and", k: "하고 · (이)랑 · 와/과",
       s: "Three particles mean both 'and' between nouns and 'with' someone. They differ in register.",
       p: ["하고 is neutral and spoken, (이)랑 is casual, 와/과 is written or formal.",
@@ -263,24 +277,6 @@ const MORE_LESSONS = {
           ["\"We talked all night\" is…", ["밤새도록 이야기했어요.", "밤새느라고 이야기했어요.", "밤새자마자 이야기했어요.", "밤새는 채로 이야기했어요."], 0, "-도록 = until."]] }
   ],
 
-  /* ── B2 종로 ── */
-  jongno: [
-    { t: "Parts of a sentence", k: "문장 성분",
-      s: "School grammar names seven jobs a word or phrase can do in a sentence. Particles and endings usually tell you which job.",
-      p: ["Main parts (주성분): subject 주어, predicate 서술어, object 목적어, complement 보어 (the noun before 되다 / 아니다: 물이 얼음이 되었다).",
-          "Supporting parts (부속 성분): 관형어 describes a noun (새 책, 내가 산 책); 부사어 describes a verb, adjective or the whole sentence (빨리, 학교에서).",
-          "Independent part (독립 성분): 독립어 stands apart from the rest: 아, 네, 민수야.",
-          "A sentence with one subject–predicate pair is 홑문장; with two or more, 겹문장 (see Seongsu)."],
-      table: { head: ["Part", "Korean term", "Example"], rows: [
-        ["Subject", "주어", "민수가 책을 읽는다."], ["Predicate", "서술어", "민수가 책을 읽는다."], ["Object", "목적어", "민수가 책을 읽는다."],
-        ["Complement", "보어", "물이 얼음이 되었다."], ["Noun modifier", "관형어", "새 책을 샀다."], ["Adverbial", "부사어", "빨리 읽었다."], ["Independent", "독립어", "아, 비가 온다."]] },
-      ex: ["민수가 도서관에서 새 책을 빨리 읽었다.", "아, 물이 얼음이 되었네."],
-      q: [["In 물이 얼음이 되었다, 얼음이 is the…", ["subject (주어)", "object (목적어)", "complement (보어)", "adverbial (부사어)"], 2, "The noun before 되다 / 아니다 is the 보어."],
-          ["In 새 책을 샀다, 새 is a…", ["관형어", "부사어", "주어", "독립어"], 0, "It describes the noun 책."],
-          ["In 민수야, 밥 먹었어?, 민수야 is a…", ["주어", "독립어", "목적어", "서술어"], 1, "A call-out stands apart: 독립어."],
-          ["민수가 학교에 가고 지수가 집에 왔다 is a…", ["홑문장", "겹문장", "명사절", "관형절"], 1, "Two subject–predicate pairs: 겹문장."]] }
-  ],
-
   /* ── C1 인사동 ── */
   insadong: [
     { t: "The first rule of spelling", k: "한글 맞춤법의 원리",
@@ -401,10 +397,21 @@ const MORE_LESSONS = {
     if (!u) return;
     const m = u.lessons.findIndex(l => l.kind === "mission");
     const at = m === -1 ? u.lessons.length : m;
-    lessons.forEach((l, k) => {
+    let k = 0;
+    lessons.filter(l => l.at == null).forEach(l => {
       const { q, ...lesson } = l;
       u.lessons.splice(at + k, 0, lesson);
       PRACTICE[`${id}:${at + k}`] = q;
+      k++;
+    });
+    // lessons with a fixed position: shift the practice of everything after them
+    lessons.filter(l => l.at != null).forEach(l => {
+      const { q, at: pos, ...lesson } = l;
+      for (let j = u.lessons.length - 1; j >= pos; j--) {
+        if (PRACTICE[`${id}:${j}`]) { PRACTICE[`${id}:${j + 1}`] = PRACTICE[`${id}:${j}`]; delete PRACTICE[`${id}:${j}`]; }
+      }
+      u.lessons.splice(pos, 0, lesson);
+      PRACTICE[`${id}:${pos}`] = q;
     });
   });
 })();
