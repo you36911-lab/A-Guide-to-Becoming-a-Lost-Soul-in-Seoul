@@ -891,3 +891,9 @@ body.guide-on { overflow: hidden; }
 .fact-label { color: var(--accent-ink); font-size: .9rem; }
 .fact-label::before { content: none; }
 .fact p:last-child { color: var(--ink-2); font-size: .9rem; }
+
+/* practice block: calm warm grey (option C) */
+.lesson-block.b-practice { background: #F4F1ED; }
+.b-practice .qcard { background: #fff; border-color: #EAE3DC; }
+.b-practice .qcard.is-right { background: #FAFDFB; border-color: #C6E2D1; }
+.b-practice .qcard.is-wrong { background: #FFFBFC; border-color: #F2C9D2; }
