@@ -22,7 +22,6 @@
   <meta name="twitter:title" content="A Guide to Becoming a Lost Soul in Seoul" />
   <meta name="twitter:description" content="Learn Korean from the inside: Hangul, sounds and grammar, one Seoul neighborhood at a time." />
   <meta name="twitter:image" content="og-image.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-180.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -48,6 +47,11 @@
       var h = location.hash;
       if (h && h !== "#/" && h !== "#") show = false;
       document.documentElement.classList.add(show ? "splash-pending" : "no-splash");
+      // The web-app manifest only works on a real web address; opening the file directly would just log an error
+      if (/^https?:$/.test(location.protocol)) {
+        var m = document.createElement("link"); m.rel = "manifest"; m.href = "manifest.webmanifest";
+        document.head.appendChild(m);
+      }
     })();
   </script>
 </head>
@@ -272,6 +276,7 @@
   <script src="curriculum.js" defer></script>
   <script src="practice.js" defer></script>
   <script src="curriculum-more.js" defer></script>
+  <script src="curriculum-edits.js" defer></script>
   <script src="dictionary.js" defer></script>
   <script src="hanja.js" defer></script>
   <script src="deepdives.js" defer></script>

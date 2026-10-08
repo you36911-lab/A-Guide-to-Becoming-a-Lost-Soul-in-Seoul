@@ -20,7 +20,7 @@ const read = f => fs.readFileSync(path.join(root, f), "utf8");
 const ctx = { window: {}, console };
 vm.createContext(ctx);
 const K = require(path.join(root, "engine.js"));
-for (const f of ["curriculum.js", "practice.js", "curriculum-more.js", "dictionary.js", "hanja.js", "deepdives.js", "readings.js"]) {
+for (const f of ["curriculum.js", "practice.js", "curriculum-more.js", "curriculum-edits.js", "dictionary.js", "hanja.js", "deepdives.js", "readings.js"]) {
   vm.runInContext(read(f).replace(/^const (\w+) =/gm, "var $1 =").replace(/^let (\w+) =/gm, "var $1 ="), ctx, { filename: f });
 }
 const { LEVELS, UNITS, PRACTICE, PLACEMENT, PROVERBS, DICTIONARY, HANJA, HANJA_SETS, DEEP_DIVES, READINGS } = ctx;
@@ -32,7 +32,7 @@ const guidesBlock = between("const GUIDES = {", "function guideKey()");
 const diaryPrompts = [...between("const DIARY_PROMPTS = [", "];").matchAll(/\{ lv: "(\w+)", ko: "([^"]+)", en: "([^"]+)" \}/g)].map(m => ({ lv: m[1], ko: m[2], en: m[3] }));
 const introLead = (R.match(/<p class="intro-lead">([^<]+)<\/p>/) || [])[1] || "";
 const introHow = [...(between('<ul class="intro-list-how">', "</ul>").matchAll(/<li>([^<]+)<\/li>/g))].map(m => m[1]);
-const toolSubs = [...R.matchAll(/<h2 id="t\w">([^<]+)<span class="tool-ko" lang="ko">([^<]+)<\/span><\/h2>\s*<p class="tool-sub">([^<]+)<\/p>/g)].map(m => ({ t: m[1].trim(), ko: m[2], sub: m[3] }));
+const toolSubs = [...R.matchAll(/<h2 id="t\w">([^<]+)<\/h2>\s*<p class="tool-sub">([^<]+)<\/p>/g)].map(m => ({ t: m[1].trim(), sub: m[2] }));
 const samplesPron = (R.match(/\["같이", "신라"[^\]]*\]/) || [""])[0];
 const samplesConj = (R.match(/\["먹다", "가다", "하다"[^\]]*\]/) || [""])[0];
 const glyphNotes = [...R.matchAll(/<li><span class="gn-l" lang="ko">([^<]+)<\/span><span>([^<]+)<\/span><\/li>/g)].map(m => [m[1], m[2]]);
@@ -84,7 +84,7 @@ function practiceFor(key) {
   (PRACTICE[key] || []).forEach(item => {
     if (Array.isArray(item)) out.push({ kind: "mc", q: item[0], o: item[1], a: item[2], why: item[3] });
     else if (item.order) out.push({ kind: "order", q: item.q, order: item.order, why: item.why });
-    else if (item.drill === "pron") item.words.forEach(w => { const r = K.pronounce(w); out.push({ kind: "drill", q: `How is ${w} pronounced?`, a: `[${r.text}]`, why: r.rules.map(x => K.RULES[x].ko).join(", ") || "as written" }); });
+    else if (item.drill === "pron") item.words.forEach(w => { const r = K.pronounce(w); out.push({ kind: "drill", q: `How is ${w} pronounced?`, a: `[${r.text}]`, why: r.rules.map(x => K.RULES[x].name).join(", ") || "as written" }); });
     else if (item.drill === "conj") item.words.forEach(w => out.push({ kind: "drill", q: `${w} → ${K.FORMS[item.form].ko} (${K.FORMS[item.form].en})`, a: K.conjugate(w, item.form), why: K.irregularType(w) ? `${K.irregularType(w)}${K.irregularType(w).includes("탈락") ? "" : " 불규칙"}` : "regular" }));
     else if (item.drill === "num") item.items.forEach(([kind, a, b]) => out.push({ kind: "drill", q: kind === "time" ? `How do you read ${a}:${String(b).padStart(2, "0")}?` : kind === "price" ? `How do you read ₩${a.toLocaleString("en-US")}?` : `How do you say month ${a}?`, a: kind === "time" ? K.readTime(a, b) : kind === "price" ? K.readPrice(a) : K.readMonth(a), why: "" }));
   });
@@ -153,7 +153,7 @@ UNITS.forEach((u, i) => {
     if (l.table) { label("TABLE"); table(l.table.head, l.table.rows); }
     if (l.figure) para(`[Interactive figure: ${l.figure}${l.ghost ? `, trace text “${l.ghost}”` : ""}]`);
     label(l.kind === "mission" ? "USEFUL EXPRESSIONS" : "EXAMPLES");
-    l.ex.forEach(x => bullet(x));
+    l.ex.forEach(x => Array.isArray(x) ? bullet([T(x[0]), T(`  — ${x[1]}`, { color: "6E6560", italics: true })]) : bullet(x));
     if (l.kind !== "mission") renderPractice(key);
   });
 });
@@ -213,7 +213,7 @@ table(["Word", "Part of speech", "English", "Level", "Hanja"], DICTIONARY.map(e 
 // ── Part 8: lab
 h1("Part 8 · Lab");
 h2("Tool descriptions", "lab");
-toolSubs.forEach(t => { h3(`${t.t.trim()} · ${t.ko}`); para(t.sub); });
+toolSubs.forEach(t => { h3(t.t); para(t.sub); });
 h2("Sample words");
 para(`Pronunciation: ${samplesPron.replace(/[\[\]"]/g, "")}`);
 para(`Conjugation: ${samplesConj.replace(/[\[\]"]/g, "")}`);
@@ -222,7 +222,7 @@ table(["Letters", "Note"], glyphNotes);
 h2("Common-mistake checker rules", "spell");
 table(["Pattern", "Correction", "Note"], K.SPELL_RULES.map(r => [String(r.re).replace(/^\/|\/g$/g, ""), typeof r.fix === "function" ? "(computed)" : r.fix, r.note || ""]));
 h2("Pronunciation exceptions (words the rules can't predict)", "exceptions");
-table(["Word", "Pronunciation", "Why"], Object.entries(K.EXCEPTIONS).map(([w, [p, rs]]) => [w, `[${p}]`, rs.map(x => K.RULES[x].ko).join(", ")]));
+table(["Word", "Pronunciation", "Why"], Object.entries(K.EXCEPTIONS).map(([w, [p, rs]]) => [w, `[${p}]`, rs.map(x => K.RULES[x].name).join(", ")]));
 
 // ── build
 const doc = new Document({

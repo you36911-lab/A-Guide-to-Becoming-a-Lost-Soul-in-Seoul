@@ -38,19 +38,19 @@
   const NASAL = { "ㄱ":"ㅇ","ㄷ":"ㄴ","ㅂ":"ㅁ" };
 
   const RULES = {
-    link:   { ko: "연음",            en: "A final consonant moves to the next syllable", ref: "제13·14항" },
-    rep:    { ko: "받침의 대표음",    en: "Finals reduce to one of seven sounds",         ref: "제9·10·11항" },
-    hDrop:  { ko: "ㅎ 탈락",          en: "Final ㅎ is silent before a vowel",            ref: "제12항" },
-    asp:    { ko: "거센소리되기",      en: "ㅎ merges into ㅋ ㅌ ㅍ ㅊ",                   ref: "제12항" },
-    pal:    { ko: "구개음화",          en: "ㄷ, ㅌ + 이 become 지, 치",                      ref: "제17항" },
-    nasal:  { ko: "비음화",            en: "ㄱ ㄷ ㅂ become ㅇ ㄴ ㅁ before ㄴ, ㅁ",        ref: "제18항" },
-    rNasal: { ko: "ㄹ의 비음화",       en: "ㄹ becomes ㄴ after ㅁ, ㅇ (and ㄱ, ㅂ)",        ref: "제19항" },
-    liquid: { ko: "유음화",            en: "ㄴ next to ㄹ becomes ㄹ",                      ref: "제20항" },
-    tense:  { ko: "된소리되기",        en: "Plain consonants become tense after ㄱ ㄷ ㅂ", ref: "제23~25항" },
-    ui:     { ko: "ㅢ의 발음",         en: "ㅢ after a consonant is read [ㅣ]",            ref: "제5항" },
-    nIns:   { ko: "ㄴ 첨가",           en: "An extra ㄴ is added in some compounds",       ref: "제29항" },
-    saisiot:{ ko: "사잇소리",          en: "Compound with a hidden tensing (사이시옷)",     ref: "제30항" },
-    exception:{ ko: "개별 단어",        en: "Pronunciation set word by word",               ref: "표준국어대사전" }
+    link:   { ko: "연음", name: "Linking",            en: "A final consonant moves to the next syllable", ref: "제13·14항" },
+    rep:    { ko: "받침의 대표음", name: "Seven final sounds",    en: "Finals reduce to one of seven sounds",         ref: "제9·10·11항" },
+    hDrop:  { ko: "ㅎ 탈락", name: "Silent ㅎ",          en: "Final ㅎ is silent before a vowel",            ref: "제12항" },
+    asp:    { ko: "거센소리되기", name: "Aspiration",      en: "ㅎ merges into ㅋ ㅌ ㅍ ㅊ",                   ref: "제12항" },
+    pal:    { ko: "구개음화", name: "Palatalization",          en: "ㄷ, ㅌ + 이 become 지, 치",                      ref: "제17항" },
+    nasal:  { ko: "비음화", name: "Nasalization",            en: "ㄱ ㄷ ㅂ become ㅇ ㄴ ㅁ before ㄴ, ㅁ",        ref: "제18항" },
+    rNasal: { ko: "ㄹ의 비음화", name: "ㄹ becomes ㄴ",       en: "ㄹ becomes ㄴ after ㅁ, ㅇ (and ㄱ, ㅂ)",        ref: "제19항" },
+    liquid: { ko: "유음화", name: "ㄹ-assimilation",            en: "ㄴ next to ㄹ becomes ㄹ",                      ref: "제20항" },
+    tense:  { ko: "된소리되기", name: "Tensing",        en: "Plain consonants become tense after ㄱ ㄷ ㅂ", ref: "제23~25항" },
+    ui:     { ko: "ㅢ의 발음", name: "ㅢ read as ㅣ",         en: "ㅢ after a consonant is read [ㅣ]",            ref: "제5항" },
+    nIns:   { ko: "ㄴ 첨가", name: "Added ㄴ",           en: "An extra ㄴ is added in some compounds",       ref: "제29항" },
+    saisiot:{ ko: "사잇소리", name: "Hidden tensing in compounds",          en: "Compound with a hidden tensing (사이시옷)",     ref: "제30항" },
+    exception:{ ko: "개별 단어", name: "Set word by word",        en: "Pronunciation set word by word",               ref: "표준국어대사전" }
   };
 
   // Words whose pronunciation cannot be derived from spelling alone

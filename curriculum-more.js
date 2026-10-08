@@ -8,6 +8,34 @@
 const MORE_LESSONS = {
   /* ── A0 광화문 ── */
   gwanghwamun: [
+    { at: 0, t: "Hangul at a glance", k: "", figure: "hangul-chart",
+      s: "Before the details, here is the whole alphabet on one page: 19 consonants and 21 vowels. You'll learn how each one works in this neighborhood and the next.",
+      p: ["Hangul has 14 basic consonants and 10 basic vowels.",
+          "Five double consonants (ㄲ ㄸ ㅃ ㅆ ㅉ) and eleven compound vowels are built from the basic letters.",
+          "Every syllable is a block made from these letters: a consonant, a vowel, and sometimes a final consonant."],
+      ex: ["ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ", "ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ"],
+      q: [["How many basic consonants does Hangul have?", ["10", "14", "19", "24"], 1, "14 basic consonants; with the five double ones, 19."],
+          ["Which of these is a double consonant?", ["ㅌ", "ㄸ", "ㄹ", "ㅎ"], 1, "ㄲ ㄸ ㅃ ㅆ ㅉ are the double consonants."],
+          ["Every syllable block contains at least…", ["two consonants", "a consonant and a vowel", "a vowel and a final consonant", "three letters"], 1, "A consonant (ㅇ if silent) and a vowel; the final consonant is optional."]] }
+  ],
+
+  /* ── A0 서촌 ── */
+  seochon: [
+    { t: "Where sounds are made", k: "조음 위치와 조음 방법", figure: "vocal-tract",
+      s: "Every consonant has an address: where in the mouth it's made, and how the air gets through.",
+      p: ["Place: both lips (ㅂ ㅃ ㅍ ㅁ), the ridge behind the teeth (ㄷ ㄸ ㅌ ㄴ ㄹ ㅅ ㅆ), the hard palate (ㅈ ㅉ ㅊ), the soft palate (ㄱ ㄲ ㅋ ㅇ), the throat (ㅎ).",
+          "Manner: stops close and release (ㄱ ㄷ ㅂ), affricates release slowly (ㅈ ㅉ ㅊ), fricatives hiss (ㅅ ㅆ ㅎ), nasals send air through the nose (ㄴ ㅁ ㅇ), and ㄹ is the liquid.",
+          "Nasals and ㄹ are always voiced (울림소리); the rest are voiceless at the start of a word (안울림소리)."],
+      table: { head: ["", "Lips", "Ridge", "Hard palate", "Soft palate", "Throat"], rows: [
+        ["Stops", "ㅂ ㅃ ㅍ", "ㄷ ㄸ ㅌ", "", "ㄱ ㄲ ㅋ", ""],
+        ["Affricates", "", "", "ㅈ ㅉ ㅊ", "", ""],
+        ["Fricatives", "", "ㅅ ㅆ", "", "", "ㅎ"],
+        ["Nasals", "ㅁ", "ㄴ", "", "ㅇ", ""],
+        ["Liquid", "", "ㄹ", "", "", ""]] },
+      ex: ["밤 · 담 · 감", "사 · 자 · 차", "나 · 마 · 아"],
+      q: [["Which consonant is made with both lips?", ["ㄷ", "ㅁ", "ㄱ", "ㅈ"], 1, "ㅂ ㅃ ㅍ ㅁ are made with both lips."],
+          ["ㅈ ㅉ ㅊ are…", ["stops", "affricates", "nasals", "liquids"], 1, "Affricates start like a stop and release like a fricative."],
+          ["Which group is always voiced?", ["ㄱ ㄷ ㅂ", "ㅅ ㅆ ㅎ", "ㄴ ㅁ ㅇ ㄹ", "ㅋ ㅌ ㅍ"], 2, "Nasals and the liquid are 울림소리."]] },
     { t: "Writing by hand", k: "획순 (쓰는 순서)", figure: "handwriting", ghost: "한글",
       s: "Hangul is written stroke by stroke in a fixed order. Following it keeps your letters even and easy to read.",
       p: ["Strokes go from top to bottom and from left to right.",
@@ -32,25 +60,6 @@ const MORE_LESSONS = {
           ["How do you type ㄲ?", ["press ㄱ twice", "Shift + ㄱ", "Alt + ㄱ", "it isn't on the keyboard"], 1, "Shift gives the tense consonants."],
           ["Which keyboard should you add in your settings?", ["Korean (2-Set / 두벌식)", "Korean (3-Set) only", "Japanese", "Chinese"], 0, "2-Set is the standard layout."],
           ["On a Korean keyboard, what does the key right of the space bar do?", ["types ₩", "switches between Korean and English (한/영)", "opens the symbol list", "types a space"], 1, "한/영 switches input; 한자 is on the left."]] }
-  ],
-
-  /* ── A0 서촌 ── */
-  seochon: [
-    { t: "Where sounds are made", k: "조음 위치와 조음 방법", figure: "vocal-tract",
-      s: "Every consonant has an address: where in the mouth it's made, and how the air gets through.",
-      p: ["Place: both lips (ㅂ ㅃ ㅍ ㅁ), the ridge behind the teeth (ㄷ ㄸ ㅌ ㄴ ㄹ ㅅ ㅆ), the hard palate (ㅈ ㅉ ㅊ), the soft palate (ㄱ ㄲ ㅋ ㅇ), the throat (ㅎ).",
-          "Manner: stops close and release (ㄱ ㄷ ㅂ), affricates release slowly (ㅈ ㅉ ㅊ), fricatives hiss (ㅅ ㅆ ㅎ), nasals send air through the nose (ㄴ ㅁ ㅇ), and ㄹ is the liquid.",
-          "Nasals and ㄹ are always voiced (울림소리); the rest are voiceless at the start of a word (안울림소리)."],
-      table: { head: ["", "Lips", "Ridge", "Hard palate", "Soft palate", "Throat"], rows: [
-        ["Stops", "ㅂ ㅃ ㅍ", "ㄷ ㄸ ㅌ", "", "ㄱ ㄲ ㅋ", ""],
-        ["Affricates", "", "", "ㅈ ㅉ ㅊ", "", ""],
-        ["Fricatives", "", "ㅅ ㅆ", "", "", "ㅎ"],
-        ["Nasals", "ㅁ", "ㄴ", "", "ㅇ", ""],
-        ["Liquid", "", "ㄹ", "", "", ""]] },
-      ex: ["밤 · 담 · 감", "사 · 자 · 차", "나 · 마 · 아"],
-      q: [["Which consonant is made with both lips?", ["ㄷ", "ㅁ", "ㄱ", "ㅈ"], 1, "ㅂ ㅃ ㅍ ㅁ are made with both lips."],
-          ["ㅈ ㅉ ㅊ are…", ["stops", "affricates", "nasals", "liquids"], 1, "Affricates start like a stop and release like a fricative."],
-          ["Which group is always voiced?", ["ㄱ ㄷ ㅂ", "ㅅ ㅆ ㅎ", "ㄴ ㅁ ㅇ ㄹ", "ㅋ ㅌ ㅍ"], 2, "Nasals and the liquid are 울림소리."]] }
   ],
 
   /* ── A0 홍대 ── */
@@ -309,7 +318,7 @@ const MORE_LESSONS = {
   insadong: [
     { t: "The first rule of spelling", k: "한글 맞춤법의 원리",
       s: "Article 1 of the spelling rules explains almost everything: write standard words as they sound, but keep the grammar visible.",
-      p: ["한글 맞춤법 제1항: 표준어를 소리대로 적되, 어법에 맞도록 함을 원칙으로 한다.",
+      p: ["Article 1 of the spelling rules: 표준어를 소리대로 적되, 어법에 맞도록 함을 원칙으로 한다. Write standard Korean as it sounds, but keep each word's grammatical shape.",
           "'As they sound': 나무, 사람, 하늘 are written exactly as pronounced.",
           "'According to grammar': each morpheme keeps one spelling. 꽃 stays 꽃 in 꽃이 [꼬치], 꽃도 [꼳또], 꽃만 [꼰만]."],
       ex: ["꽃이 [꼬치]", "꽃도 [꼳또]", "꽃만 [꼰만]", "먹어 [머거]"],

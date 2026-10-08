@@ -162,7 +162,7 @@
     };
     UNITS.forEach((u, i) => u.lessons.forEach((l, j) => {
       const where = `${u.place} ${j + 1}. ${l.t}`;
-      l.ex.forEach(x => add(x, where));
+      l.ex.forEach(x => add(Array.isArray(x) ? x[0] : x, where));
       (PRACTICE[lessonId(i, j)] || []).forEach(item => {
         if (item.drill && item.words) item.words.forEach(w => add(w, where + " (practice)"));
       });
@@ -516,7 +516,7 @@
         <header class="place-head">
           <div class="place-badges"><span class="pb-level" style="background:${lv.color}">${u.level} <span lang="ko">${lv.ko}</span></span><span class="pb-no">No. ${pad2(i + 1)}</span><span class="pb-en">${lv.en}</span></div>
           <h1 class="place-name"><span lang="ko">${esc(u.place)}</span> <em>${esc(u.placeEn)}</em></h1>
-          <p class="place-title">${esc(u.title)} <span class="place-title-ko" lang="ko">${esc(u.titleKo)}</span></p>
+          <p class="place-title">${esc(u.title)}${u.titleKo ? ` <span class="place-title-ko" lang="ko">${esc(u.titleKo)}</span>` : ""}</p>
           <p class="lede">${esc(u.blurb)}</p>
           <div class="place-progress"><div class="bar"><span style="width:${(done / total) * 100}%"></span></div><span>${done} of ${total} done</span></div>
         </header>
@@ -530,7 +530,7 @@
                   const isDone = state.done.has(lessonId(i, k)), mission = l.kind === "mission";
                   return `<li><a href="${placeHref(i, k)}" class="toc-item${isDone ? " done" : ""}${mission ? " mission" : ""}" ${k === j ? 'aria-current="page"' : ""}>
                     <span class="toc-n" aria-hidden="true">${isDone ? "✓" : mission ? "★" : pad2(k + 1)}</span>
-                    <span class="toc-t">${mission ? "Mission: " : ""}${esc(l.t)}<span class="toc-k" lang="ko">${esc(l.k)}</span></span>
+                    <span class="toc-t">${mission ? "Mission: " : ""}${esc(l.t)}${l.k ? `<span class="toc-k"${/[가-힣ㄱ-ㅣ]/.test(l.k) ? ' lang="ko"' : ""}>${esc(l.k)}</span>` : ""}</span>
                   </a></li>`;
                 }).join("")}
               </ol>
@@ -556,7 +556,7 @@
       <p class="kicker">In this place</p>
       <h2 class="lesson-title">${u.lessons.filter(l => l.kind !== "mission").length} lessons and a mission</h2>
       <ol class="intro-list">
-        ${u.lessons.map((l, k) => `<li><a href="${placeHref(i, k)}"><span class="intro-n">${l.kind === "mission" ? "★" : pad2(k + 1)}</span><span class="intro-t">${l.kind === "mission" ? "Mission: " : ""}${esc(l.t)}<span lang="ko">${esc(l.k)}</span></span><span class="intro-s">${state.done.has(lessonId(i, k)) ? "Done" : ""}</span></a></li>`).join("")}
+        ${u.lessons.map((l, k) => `<li><a href="${placeHref(i, k)}"><span class="intro-n">${l.kind === "mission" ? "★" : pad2(k + 1)}</span><span class="intro-t">${l.kind === "mission" ? "Mission: " : ""}${esc(l.t)}${l.k ? `<span${/[가-힣ㄱ-ㅣ]/.test(l.k) ? ' lang="ko"' : ""}>${esc(l.k)}</span>` : ""}</span><span class="intro-s">${state.done.has(lessonId(i, k)) ? "Done" : ""}</span></a></li>`).join("")}
       </ol>
       <div class="lesson-actions static">
         <button class="btn btn-primary" id="startUnit" type="button">${firstOpen === -1 ? "Review from the start" : firstOpen === 0 ? "Start the first lesson" : `Continue with lesson ${firstOpen + 1}`}</button>
@@ -572,14 +572,15 @@
     return m ? `<mark class="hl">${m[1]}</mark>:${t.slice(m[0].length - 1)}` : t;
   }
   // An example line with its pronunciation, shown when the toggle is on
-  function exampleHTML(x) {
+  function exampleHTML(item) {
+    const x = Array.isArray(item) ? item[0] : item, note = Array.isArray(item) ? item[1] : "";
     const s = speakable(x);
     let pron = "";
     if (/[가-힣]/.test(s) && !/\[/.test(x)) {
       const p = s.split(/\s*,\s*/).map(part => K.pronounce(part.replace(/[.?!…"“”'‘’]/g, "")).text).join(", ");
       if (p.replace(/\s/g, "") !== s.replace(/[\s.?!…,"“”'‘’]/g, "")) pron = p;
     }
-    return `<p class="example"><span class="ex-main"><span>${esc(x)}</span>${pron ? `<span class="ex-pron">[${esc(pron)}]</span>` : ""}</span>${speakBtn(x)}</p>`;
+    return `<p class="example"><span class="ex-main"><span>${esc(x)}</span>${pron ? `<span class="ex-pron">[${esc(pron)}]</span>` : ""}${note ? `<span class="ex-note" lang="en">${esc(note)}</span>` : ""}</span>${speakBtn(x)}</p>`;
   }
 
   /* ═════════ Hangul composition (for the on-screen keyboard) ═════════ */
@@ -760,20 +761,161 @@
     });
   }
 
+  /* ═════════ Hangul chart and stroke order ═════════ */
+  const CONS = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+  const CONS2 = ["ㄲ", "ㄸ", "ㅃ", "ㅆ", "ㅉ"];
+  const VOWS = ["ㅏ", "ㅑ", "ㅓ", "ㅕ", "ㅗ", "ㅛ", "ㅜ", "ㅠ", "ㅡ", "ㅣ"];
+  const VOWS2 = ["ㅐ", "ㅒ", "ㅔ", "ㅖ", "ㅘ", "ㅙ", "ㅚ", "ㅝ", "ㅞ", "ㅟ", "ㅢ"];
+  const SOUND = { "ㄱ": "g/k", "ㄴ": "n", "ㄷ": "d/t", "ㄹ": "r/l", "ㅁ": "m", "ㅂ": "b/p", "ㅅ": "s", "ㅇ": "silent / ng", "ㅈ": "j", "ㅊ": "ch", "ㅋ": "k", "ㅌ": "t", "ㅍ": "p", "ㅎ": "h",
+    "ㄲ": "kk", "ㄸ": "tt", "ㅃ": "pp", "ㅆ": "ss", "ㅉ": "jj", "ㅏ": "a", "ㅑ": "ya", "ㅓ": "eo", "ㅕ": "yeo", "ㅗ": "o", "ㅛ": "yo", "ㅜ": "u", "ㅠ": "yu", "ㅡ": "eu", "ㅣ": "i",
+    "ㅐ": "ae", "ㅒ": "yae", "ㅔ": "e", "ㅖ": "ye", "ㅘ": "wa", "ㅙ": "wae", "ㅚ": "oe", "ㅝ": "wo", "ㅞ": "we", "ㅟ": "wi", "ㅢ": "ui" };
+  const sampleSyl = j => VOWS.concat(VOWS2).includes(j) ? K.compose("ㅇ", j) : K.compose(j, "ㅏ");
+
+  function hangulChartHTML() {
+    const cell = j => `<button type="button" class="hc-cell" data-speak="${sampleSyl(j)}" aria-label="${j}, ${SOUND[j]}. Listen to ${sampleSyl(j)}"><span class="hc-j" lang="ko">${j}</span><span class="hc-s">${SOUND[j]}</span></button>`;
+    const group = (title, list) => `<div class="hc-group"><p class="hc-h">${title}</p><div class="hc-grid">${list.map(cell).join("")}</div></div>`;
+    return `<figure class="hchart" aria-label="The whole Hangul alphabet">
+      ${group("14 basic consonants", CONS)}${group("5 double consonants", CONS2)}${group("10 basic vowels", VOWS)}${group("11 compound vowels", VOWS2)}
+      <figcaption class="tract-cap">Tap a letter to hear it in a syllable (consonants with ㅏ, vowels after a silent ㅇ). The Latin letters are only a rough guide.</figcaption>
+    </figure>`;
+  }
+
+  // Strokes in a 100×100 box, in writing order; each stroke is a list of points drawn in that direction.
+  const H = (x1, x2, y) => [[x1, y], [x2, y]];
+  const V = (x, y1, y2) => [[x, y1], [x, y2]];
+  const ring = (cx, cy, r) => Array.from({ length: 37 }, (_, k) => { const t = -Math.PI / 2 - (k / 36) * Math.PI * 2; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; });
+  const shift = (strokes, dx, sx = 1) => strokes.map(s => s.map(([x, y]) => [x * sx + dx, y]));
+  const BASE = {
+    "ㄱ": [[[24, 24], [76, 24], [76, 80]]],
+    "ㄴ": [[[26, 20], [26, 76], [80, 76]]],
+    "ㄷ": [H(26, 76, 24), [[26, 24], [26, 76], [80, 76]]],
+    "ㄹ": [[[24, 20], [76, 20], [76, 48]], H(24, 76, 48), [[24, 48], [24, 78], [80, 78]]],
+    "ㅁ": [V(26, 24, 76), [[26, 24], [74, 24], [74, 76]], H(26, 74, 76)],
+    "ㅂ": [V(28, 20, 78), V(72, 20, 78), H(28, 72, 48), H(28, 72, 78)],
+    "ㅅ": [[[52, 20], [24, 80]], [[47, 42], [78, 80]]],
+    "ㅇ": [ring(50, 50, 27)],
+    "ㅈ": [[[24, 24], [74, 24], [28, 80]], [[51, 50], [78, 80]]],
+    "ㅊ": [V(50, 8, 20), [[24, 30], [74, 30], [28, 84]], [[51, 56], [78, 84]]],
+    "ㅋ": [[[24, 22], [76, 22], [76, 80]], H(24, 76, 50)],
+    "ㅌ": [H(26, 76, 22), H(26, 76, 48), [[26, 22], [26, 76], [80, 76]]],
+    "ㅍ": [H(20, 80, 22), V(38, 22, 76), V(62, 22, 76), H(20, 80, 76)],
+    "ㅎ": [V(50, 8, 20), H(26, 74, 30), ring(50, 62, 18)],
+    "ㅏ": [V(46, 10, 90), H(46, 70, 50)],
+    "ㅑ": [V(42, 10, 90), H(42, 68, 38), H(42, 68, 62)],
+    "ㅓ": [H(30, 56, 50), V(56, 10, 90)],
+    "ㅕ": [H(30, 56, 38), H(30, 56, 62), V(58, 10, 90)],
+    "ㅗ": [V(50, 46, 68), H(12, 88, 68)],
+    "ㅛ": [V(38, 46, 68), V(62, 46, 68), H(12, 88, 68)],
+    "ㅜ": [H(12, 88, 38), V(50, 38, 62)],
+    "ㅠ": [H(12, 88, 38), V(38, 38, 62), V(62, 38, 62)],
+    "ㅡ": [H(12, 88, 50)],
+    "ㅣ": [V(50, 10, 90)]
+  };
+  const small = j => shift(BASE[j], 0, .5);           // left half
+  const right = j => shift(BASE[j], 50, .5);          // right half
+  const leftLow = j => BASE[j].map(s => s.map(([x, y]) => [x * .6 + 2, y * .55 + 40])); // ㅗ/ㅜ/ㅡ part of a compound
+  function strokesFor(j) {
+    if (BASE[j]) return BASE[j];
+    const dbl = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" }[j];
+    if (dbl) return [...small(dbl), ...right(dbl)];
+    const comp = { "ㅐ": [["ㅏ", 0, .62], ["ㅣ", 34, 1]], "ㅒ": [["ㅑ", 0, .62], ["ㅣ", 34, 1]], "ㅔ": [["ㅓ", 0, .7], ["ㅣ", 30, 1]], "ㅖ": [["ㅕ", 0, .7], ["ㅣ", 30, 1]] }[j];
+    if (comp) return comp.flatMap(([p, dx, sx]) => shift(BASE[p], dx, sx));
+    const pair = { "ㅘ": ["ㅗ", "ㅏ"], "ㅙ": ["ㅗ", "ㅐ"], "ㅚ": ["ㅗ", "ㅣ"], "ㅝ": ["ㅜ", "ㅓ"], "ㅞ": ["ㅜ", "ㅔ"], "ㅟ": ["ㅜ", "ㅣ"], "ㅢ": ["ㅡ", "ㅣ"] }[j];
+    if (pair) {
+      const rightPart = (strokesFor(pair[1]) || []).map(s => s.map(([x, y]) => [x * .5 + 46, y]));
+      return [...leftLow(pair[0]), ...rightPart];
+    }
+    return [];
+  }
+  const pathD = pts => pts.map((p, k) => (k ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+
+  function strokeOrderHTML() {
+    const tile = j => `<button type="button" class="so-tile" data-j="${j}" aria-pressed="false"><span lang="ko">${j}</span></button>`;
+    return `<figure class="so" aria-label="Stroke order for every letter">
+      <p class="so-instr"><strong>Pick a letter, then press ▶ to watch it written stroke by stroke.</strong> Then trace it in the boxes below.</p>
+      <div class="so-groups">
+        <div><p class="hc-h">Consonants</p><div class="so-grid">${CONS.concat(CONS2).map(tile).join("")}</div></div>
+        <div><p class="hc-h">Vowels</p><div class="so-grid">${VOWS.concat(VOWS2).map(tile).join("")}</div></div>
+      </div>
+      <div class="so-stage">
+        <svg class="so-svg" viewBox="0 0 100 100" aria-hidden="true"></svg>
+        <div class="so-side">
+          <p class="so-letter" lang="ko"></p>
+          <p class="so-count"></p>
+          <button type="button" class="btn btn-primary so-play">▶ Play stroke order</button>
+          <div class="so-trace-all"><button type="button" class="btn btn-small btn-ghost" data-trace="cons">Trace all consonants</button><button type="button" class="btn btn-small btn-ghost" data-trace="vows">Trace all vowels</button></div>
+        </div>
+      </div>
+      ${handPadHTML("ㄱ")}
+    </figure>`;
+  }
+  function wireStrokeOrder(root) {
+    const fig = root.querySelector(".so"); if (!fig) return;
+    const svg = fig.querySelector(".so-svg"), ghost = fig.querySelector(".hand-ghost-in");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let current = "ㄱ", timer = null;
+    const render = (animate) => {
+      clearTimeout(timer);
+      const strokes = strokesFor(current);
+      svg.innerHTML = `<rect x="1" y="1" width="98" height="98" rx="4" class="so-box"/><path d="M50 4 V96 M4 50 H96" class="so-guide"/>` +
+        strokes.map(s => `<path d="${pathD(s)}" class="so-ghost"/>`).join("") +
+        strokes.map((s, k) => `<path d="${pathD(s)}" class="so-ink" data-k="${k}"/>`).join("") +
+        (() => { const used = []; return strokes.map((s, k) => {
+          // keep the stroke numbers from sitting on top of each other when strokes start at the same point
+          let x = s[0][0] - 7, y = s[0][1] - 3;
+          while (used.some(([ux, uy]) => Math.abs(ux - x) < 7 && Math.abs(uy - y) < 7)) y += 8;
+          used.push([x, y]);
+          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="so-num" data-k="${k}">${k + 1}</text>`;
+        }).join(""); })();
+      fig.querySelector(".so-letter").textContent = current;
+      fig.querySelector(".so-count").textContent = `${strokes.length} ${strokes.length === 1 ? "stroke" : "strokes"}`;
+      const inks = [...svg.querySelectorAll(".so-ink")], nums = [...svg.querySelectorAll(".so-num")];
+      inks.forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = animate && !reduce ? L : 0; });
+      nums.forEach(n => n.style.opacity = animate && !reduce ? 0 : 1);
+      if (!animate || reduce) return;
+      let k = 0;
+      const next = () => {
+        if (k >= inks.length) return;
+        const p = inks[k], L = p.getTotalLength(), dur = Math.max(350, L * 9);
+        nums[k].style.opacity = 1;
+        p.style.transition = `stroke-dashoffset ${dur}ms ease-in-out`;
+        requestAnimationFrame(() => { p.style.strokeDashoffset = 0; });
+        k++;
+        timer = setTimeout(next, dur + 220);
+      };
+      timer = setTimeout(next, 200);
+    };
+    const pick = j => {
+      current = j;
+      fig.querySelectorAll(".so-tile").forEach(t => t.setAttribute("aria-pressed", String(t.dataset.j === j)));
+      ghost.value = j; ghost.dispatchEvent(new Event("input"));
+      render(true);
+    };
+    fig.querySelectorAll(".so-tile").forEach(t => t.addEventListener("click", () => pick(t.dataset.j)));
+    fig.querySelector(".so-play").addEventListener("click", () => render(true));
+    fig.querySelectorAll("[data-trace]").forEach(b => b.addEventListener("click", () => {
+      ghost.value = (b.dataset.trace === "cons" ? CONS.concat(CONS2) : VOWS.concat(VOWS2)).join("");
+      ghost.dispatchEvent(new Event("input"));
+      fig.querySelector(".hand").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }));
+    fig.querySelector('.so-tile[data-j="ㄱ"]').setAttribute("aria-pressed", "true");
+    render(false);
+  }
+
   /* ═════════ Vocal tract diagram (조음 위치) ═════════ */
   const PLACES = [
-    { id: "lips",   ko: "입술소리", term: "양순음", en: "Bilabial · both lips", cons: "ㅂ ㅃ ㅍ ㅁ", x: 84, y: 197, lx: 12, ly: 246, ex: 64, ey: 240 },
-    { id: "ridge",  ko: "잇몸소리", term: "치조음", en: "Alveolar · the ridge behind the upper teeth", cons: "ㄷ ㄸ ㅌ ㅅ ㅆ ㄴ ㄹ", x: 112, y: 182, lx: 12, ly: 122, ex: 64, ey: 126 },
-    { id: "hard",   ko: "센입천장소리", term: "경구개음", en: "Palatal · the hard palate", cons: "ㅈ ㅉ ㅊ", x: 166, y: 166, lx: 120, ly: 88, ex: 160, ey: 94 },
-    { id: "soft",   ko: "여린입천장소리", term: "연구개음", en: "Velar · the soft palate", cons: "ㄱ ㄲ ㅋ ㅇ", x: 240, y: 174, lx: 262, ly: 108, ex: 290, ey: 114 },
-    { id: "glottis",ko: "목청소리", term: "성문음 (후음)", en: "Glottal · between the vocal folds", cons: "ㅎ", x: 265, y: 312, lx: 300, ly: 344, ex: 318, ey: 334 }
+    { id: "lips",   ko: "Lips", term: "bilabial", en: "Both lips come together", cons: "ㅂ ㅃ ㅍ ㅁ", x: 84, y: 197, lx: 18, ly: 246, ex: 50, ey: 240 },
+    { id: "ridge",  ko: "Alveolar ridge", term: "alveolar", en: "The ridge just behind the upper teeth", cons: "ㄷ ㄸ ㅌ ㅅ ㅆ ㄴ ㄹ", x: 112, y: 182, lx: 4, ly: 122, ex: 70, ey: 126 },
+    { id: "hard",   ko: "Hard palate", term: "alveolo-palatal", en: "Just behind the ridge, toward the hard palate", cons: "ㅈ ㅉ ㅊ", x: 166, y: 166, lx: 128, ly: 88, ex: 160, ey: 94 },
+    { id: "soft",   ko: "Soft palate", term: "velar", en: "The soft back part of the roof of the mouth", cons: "ㄱ ㄲ ㅋ ㅇ", x: 240, y: 174, lx: 262, ly: 108, ex: 290, ey: 114 },
+    { id: "glottis",ko: "Glottis", term: "glottal", en: "Between the vocal folds", cons: "ㅎ", x: 265, y: 312, lx: 300, ly: 344, ex: 318, ey: 334 }
   ];
   function vocalTractHTML() {
     return `
       <figure class="tract" aria-labelledby="tractCap">
         <div class="tract-chips" role="group" aria-label="Places of articulation">
-          ${PLACES.map((p, k) => `<button type="button" class="tract-chip" data-place="${p.id}" aria-pressed="${k === 0}"><span lang="ko">${p.ko}</span></button>`).join("")}
-          <button type="button" class="tract-chip" data-place="nasal" aria-pressed="false"><span lang="ko">콧소리</span> (nasal)</button>
+          ${PLACES.map((p, k) => `<button type="button" class="tract-chip" data-place="${p.id}" aria-pressed="${k === 0}"><span>${p.ko}</span></button>`).join("")}
+          <button type="button" class="tract-chip" data-place="nasal" aria-pressed="false"><span>Nasal</span></button>
         </div>
         <div class="tract-body">
           <svg viewBox="0 0 400 380" class="tract-svg" role="img" aria-label="Cross-section of the head showing where Korean consonants are made">
@@ -791,7 +933,7 @@
             <path class="t-tooth" d="M97 178 L 106 176 L 108 191 L 99 192 Z"/>
             <path class="t-tooth" d="M98 201 L 107 200 L 107 214 L 99 214 Z"/>
             <!-- tongue -->
-            <path class="t-tongue" d="M106 206 C 116 200, 132 198, 150 197 C 186 196, 216 204, 236 220 C 248 232, 252 252, 252 272 C 252 288, 250 300, 246 310 L 216 312 C 192 300, 160 286, 136 268 C 120 254, 110 238, 106 222 Z"/>
+            <path class="t-tongue" d="M108 210 C 118 206, 134 203, 152 201 C 186 198, 216 205, 236 220 C 248 232, 252 252, 252 272 C 252 288, 250 300, 246 310 L 216 312 C 196 300, 168 290, 146 276 C 128 262, 116 244, 110 226 C 108 220, 107 214, 108 210 Z"/>
             <!-- epiglottis and vocal folds -->
             <path class="t-soft" d="M248 268 C 258 262, 266 268, 264 278 L 254 276 Z"/>
             <path class="t-fold" d="M258 312 L 272 312"/>
@@ -804,7 +946,7 @@
               <g class="t-place" data-place="${p.id}">
                 <line x1="${p.x}" y1="${p.y}" x2="${p.ex}" y2="${p.ey}" class="t-lead"/>
                 <circle cx="${p.x}" cy="${p.y}" r="7" class="t-dot"/>
-                <text x="${p.lx}" y="${p.ly}" class="t-label" lang="ko">${p.ko}</text>
+                <text x="${p.lx}" y="${p.ly}" class="t-label">${p.ko}</text>
               </g>`).join("")}
           </svg>
           <div class="tract-info" id="tractInfo" aria-live="polite"></div>
@@ -821,8 +963,8 @@
       fig.querySelector(".t-nasal").classList.toggle("on", id === "nasal");
       const p = PLACES.find(x => x.id === id);
       fig.querySelector("#tractInfo").innerHTML = p
-        ? `<p class="ti-ko" lang="ko">${p.ko} <span>${p.term}</span></p><p class="ti-en">${p.en}</p><p class="ti-cons" lang="ko">${p.cons}</p>`
-        : `<p class="ti-ko" lang="ko">콧소리 <span>비음</span></p><p class="ti-en">Nasal · air flows out through the nose</p><p class="ti-cons" lang="ko">ㅁ ㄴ ㅇ</p><p class="ti-note">Same places as ㅂ, ㄷ, ㄱ, but the soft palate lowers and air goes through the nose.</p>`;
+        ? `<p class="ti-ko">${p.ko} <span>${p.term}</span></p><p class="ti-en">${p.en}</p><p class="ti-cons" lang="ko">${p.cons}</p>`
+        : `<p class="ti-ko">Nasal</p><p class="ti-en">Air flows out through the nose</p><p class="ti-cons" lang="ko">ㅁ ㄴ ㅇ</p><p class="ti-note">Same places as ㅂ, ㄷ, ㄱ, but the soft palate lowers and air goes through the nose.</p>`;
     };
     fig.querySelectorAll(".tract-chip").forEach(b => b.addEventListener("click", () => show(b.dataset.place)));
     fig.querySelectorAll(".t-place").forEach(g => g.addEventListener("click", () => show(g.dataset.place)));
@@ -845,7 +987,7 @@
     return `
       <div class="lesson-no${mission ? " is-mission" : ""}"><span class="ln-big" aria-hidden="true">${mission ? "★" : pad2(j + 1)}</span><span class="ln-of">${mission ? "Mission" : `Lesson ${j + 1} of ${nLessons}`}</span></div>
       <h2 class="lesson-title">${esc(l.t)}</h2>
-      <p class="lesson-term" lang="ko">${esc(l.k)}</p>
+      ${l.k ? `<p class="lesson-term"${/[가-힣ㄱ-ㅣ]/.test(l.k) ? ' lang="ko"' : ""}>${esc(l.k)}</p>` : ""}
       <p class="lesson-lead">${esc(l.s)}</p>
 
       <section class="lesson-block ${mission ? "b-check" : "b-ideas"}">
@@ -855,6 +997,8 @@
           : `<ol class="key-ideas" lang="ko">${l.p.map(p => `<li><span>${highlight(p)}</span></li>`).join("")}</ol>`}
         ${l.figure === "vocal-tract" ? vocalTractHTML() : ""}
         ${l.figure === "handwriting" ? handPadHTML(l.ghost || "") : ""}
+        ${l.figure === "hangul-chart" ? hangulChartHTML() : ""}
+        ${l.figure === "stroke-order" ? strokeOrderHTML() : ""}
         ${l.figure === "keyboard" ? `<h3 class="block-h fig-h">The whole keyboard</h3>${keyboardMapHTML()}<h3 class="block-h fig-h">Try it</h3><div class="kb-demo"><label class="sr-only" for="kbDemo">Type here</label><textarea id="kbDemo" class="draft" lang="ko" rows="2" placeholder="Try: ㅎ ㅏ ㄴ ㄱ ㅡ ㄹ → 한글"></textarea>${keyboardHTML()}</div>` : ""}
         ${l.table ? `<div class="table-wrap lesson-table"><table class="deep-table"><thead><tr>${l.table.head.map(x => `<th scope="col">${esc(x)}</th>`).join("")}</tr></thead><tbody>${l.table.rows.map(row => `<tr>${row.map((c, ci) => ci === 0 ? `<th scope="row">${esc(c)}</th>` : `<td lang="ko">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
       </section>
@@ -894,6 +1038,7 @@
     const root = $("#placeBody");
     wireVocalTract(root);
     wireHandPad(root);
+    wireStrokeOrder(root);
     const demo = $("#kbDemo");
     if (demo) attachKeyboard(root.querySelector(".kb-demo .kb"), demo);
     root.querySelector(".pron-toggle")?.addEventListener("click", e => {
@@ -985,7 +1130,7 @@
     const pool = [...cands];
     const first = pool[0] === `[${word}]` ? [pool.shift()] : [];
     const opts = shuffle([correct, ...first, ...shuffle(pool).slice(0, 3 - first.length)]);
-    const rules = res.rules.map(r => K.RULES[r]?.ko).filter(Boolean);
+    const rules = res.rules.map(r => K.RULES[r]?.name).filter(Boolean);
     return { type: "mc", prompt: word, q: `How is ${word} pronounced?`, o: opts, a: opts.indexOf(correct),
       why: rules.length ? `${word} → ${correct}: ${rules.join(", ")}.` : `${word} is pronounced as written.` };
   }
@@ -1168,21 +1313,21 @@
     const tool = params.get("tool");
     $("#labBody").innerHTML = `
       <section class="tool" id="tool-pron" aria-labelledby="tp">
-        <h2 id="tp">Pronunciation and romanization <span class="tool-ko" lang="ko">발음 · 로마자</span></h2>
-        <p class="tool-sub">Type a word or a short phrase. The lab applies the standard pronunciation rules (표준 발음법), names each one it used, and shows the word in three romanization systems.</p>
+        <h2 id="tp">Pronunciation and romanization </h2>
+        <p class="tool-sub">Type a word or a short phrase. The lab applies the standard pronunciation rules, names each one it used, and shows the word in three romanization systems.</p>
         <input id="pronIn" class="input-ko" lang="ko" type="text" value="국물이 맛있네요" autocomplete="off" aria-label="Korean word or phrase" />
         <div class="samples" lang="ko">${["같이", "신라", "축하해요", "꽃 위", "읽고", "독립문", "부산", "압구정", "김치", "희망"].map(w => `<button type="button" class="chip" data-sample="${w}">${w}</button>`).join("")}</div>
         <div class="tool-out" id="pronOut" aria-live="polite"></div>
       </section>
       <section class="tool" id="tool-conj" aria-labelledby="tc">
-        <h2 id="tc">Conjugation <span class="tool-ko" lang="ko">활용</span></h2>
+        <h2 id="tc">Conjugation </h2>
         <p class="tool-sub">Type a verb or adjective in its dictionary form, ending in 다.</p>
         <input id="conjIn" class="input-ko" lang="ko" type="text" value="듣다" autocomplete="off" aria-label="Dictionary form" />
         <div class="samples" lang="ko">${["먹다", "가다", "하다", "돕다", "모르다", "하얗다", "살다", "쓰다", "짓다"].map(w => `<button type="button" class="chip" data-sample-c="${w}">${w}</button>`).join("")}</div>
         <div class="tool-out" id="conjOut" aria-live="polite"></div>
       </section>
       <section class="tool" id="tool-num" aria-labelledby="tn">
-        <h2 id="tn">Numbers <span class="tool-ko" lang="ko">수</span></h2>
+        <h2 id="tn">Numbers </h2>
         <p class="tool-sub">See a number in both systems, as a price, and as a time.</p>
         <div class="field-row">
           <label class="field"><span>Number</span><input id="numIn" type="number" min="0" max="99999999" value="15000" /></label>
@@ -1191,13 +1336,13 @@
         <div class="tool-out" id="numOut" aria-live="polite"></div>
       </section>
       <section class="tool" id="tool-spell" aria-labelledby="ts">
-        <h2 id="ts">Common mistakes <span class="tool-ko" lang="ko">자주 틀리는 표기</span></h2>
+        <h2 id="ts">Common mistakes </h2>
         <p class="tool-sub">Paste a few sentences. The checker flags spellings that are always wrong, the ones learners and native speakers trip over most. It isn't a full spell checker, so a clean result doesn't mean the text is perfect.</p>
         <textarea id="spellIn" class="draft" lang="ko" rows="4" aria-label="Text to check">저는 학생예요. 내일 연락할께요. 몇일 후에 만날수있어요?</textarea>
         <div class="tool-out" id="spellOut" aria-live="polite"></div>
       </section>
       <section class="tool" id="tool-fonts" aria-labelledby="tf">
-        <h2 id="tf">Letterforms <span class="tool-ko" lang="ko">글꼴</span></h2>
+        <h2 id="tf">Letterforms </h2>
         <p class="tool-sub">The same letters can look quite different from one typeface to the next, and handwriting differs again. Type anything to compare.</p>
         <input id="fontIn" class="input-ko" lang="ko" type="text" value="다람쥐 헌 쳇바퀴에 타고파" autocomplete="off" aria-label="Sample text" />
         <div class="tool-out" id="fontOut"></div>
@@ -1219,7 +1364,7 @@
       const r = K.pronounce(v);
       pronOut.innerHTML = `
         <div class="pron-result"><span class="pron-written" lang="ko">${esc(v)}</span><span class="pron-arrow" aria-hidden="true">→</span><span class="pron-said" lang="ko">[${esc(r.text)}]</span>${speakBtn(v)}</div>
-        ${r.rules.length ? `<ul class="rule-list">${r.rules.map(k => { const R = K.RULES[k]; return `<li><span class="rule-ko" lang="ko">${R.ko}</span><span>${R.en}</span><span class="rule-ref" lang="ko">${R.ref}</span></li>`; }).join("")}</ul>` : `<p class="muted">Pronounced as written.</p>`}
+        ${r.rules.length ? `<ul class="rule-list">${r.rules.map(k => { const R = K.RULES[k]; return `<li><span class="rule-ko">${R.name}</span><span>${R.en}</span></li>`; }).join("")}</ul>` : `<p class="muted">Pronounced as written.</p>`}
         <dl class="rom-list">
           <div><dt>Revised Romanization</dt><dd>${esc(K.romanize(v, "rr"))}</dd><span class="muted">South Korea, 2000</span></div>
           <div><dt>McCune–Reischauer</dt><dd>${esc(K.romanize(v, "mr"))}</dd><span class="muted">1939, long used in Western scholarship</span></div>
@@ -1554,7 +1699,7 @@
     return `
       ${pronText ? `<p class="dd-pron"><span lang="ko">[${esc(pronText)}]</span>${speakBtn(w)}${pos ? `<span class="dd-pos">${esc(pos)}</span>` : ""}</p>` : pos ? `<p class="dd-pron">${speakBtn(w)}<span class="dd-pos">${esc(pos)}</span></p>` : ""}
       ${e.pron && e.pron.includes("ː") ? `<p class="dd-note">ː marks a long vowel in the standard pronunciation. Most younger Seoul speakers no longer distinguish length.</p>` : ""}
-      ${showRules ? `<p class="dd-rules" lang="ko">${r.rules.map(k => K.RULES[k].ko).join(", ")}</p>` : ""}
+      ${showRules ? `<p class="dd-rules">${r.rules.map(k => K.RULES[k].name).join(", ")}</p>` : ""}
       ${hj ? `<p class="dd-hanja"><span class="hj-text">${esc(hj)}</span>${links}</p>` : ""}
       ${defs && defs.length ? `<ol class="dd-defs" lang="ko">${defs.map(d => `<li>${esc(d)}</li>`).join("")}</ol>` : ""}
       ${enDef ? `<p class="dd-endef">${esc(enDef)}</p>` : ""}
@@ -1584,7 +1729,7 @@
     const r = K.pronounce(q);
     return `<div class="dict-miss">
       <p><strong lang="ko">${esc(q)}</strong> isn't in the built-in dictionary yet. Here's how it's pronounced, and where to look it up.</p>
-      <p class="dd-pron"><span lang="ko">[${esc(r.text)}]</span>${speakBtn(q)}${r.rules.length ? `<span class="dd-rules" lang="ko">${r.rules.map(k => K.RULES[k].ko).join(", ")}</span>` : ""}</p>
+      <p class="dd-pron"><span lang="ko">[${esc(r.text)}]</span>${speakBtn(q)}${r.rules.length ? `<span class="dd-rules">${r.rules.map(k => K.RULES[k].name).join(", ")}</span>` : ""}</p>
       <div class="dd-actions">
         <button type="button" class="btn btn-small ${state.saved[q] ? "btn-done" : "btn-quiet"}" data-save="${esc(q)}">${state.saved[q] ? "Saved for review ✓" : "Save for review"}</button>
         <a class="btn btn-small btn-quiet" href="${krdict(q)}" target="_blank" rel="noopener" lang="ko">한국어기초사전</a>
