@@ -45,8 +45,8 @@ const UNITS = [
         p: ["Tall vowels (ㅏ ㅓ ㅣ) sit to the right; flat vowels (ㅗ ㅜ ㅡ) sit below.", "A block always starts with a consonant. ㅇ is the silent placeholder.", "The final consonant goes at the bottom."],
         ex: ["ㅎ + ㅏ + ㄴ = 한", "ㄱ + ㅡ + ㄹ = 글", "ㅇ + ㅗ = 오"] },
       { kind: "mission", t: "Write your name in Hangul", k: "내 이름 한글로 써 보기",
-        s: "Turn the sounds of your name into syllable blocks. There is often more than one right answer.",
-        p: ["Split your name into sounds, not letters.", "Group each sound into a consonant + vowel (+ final) block.", "Compare with how Korean media spell names like yours."],
+        handwriting: true, s: "Turn the sounds of your name into syllable blocks, write them by hand, then type them. There is often more than one right answer.",
+        p: ["Split your name into sounds, not letters.", "Group the sounds into blocks: consonant + vowel (+ final).", "Write it by hand first, stroke by stroke, then type it."],
         ex: ["Anna → 안나", "Lukas → 루카스", "Sophie → 소피"] }
     ]
   },

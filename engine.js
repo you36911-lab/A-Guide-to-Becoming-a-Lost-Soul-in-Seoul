@@ -531,7 +531,7 @@
     return (text || "").trim().split(/\s+/).map(w => romanizeWord(w, system)).join(" ");
   }
 
-  const api = { romanize, checkSpelling, decompose, compose, isSyl, pronounce, RULES, EXCEPTIONS, conjugate, FORMS, IRREGULAR, irregularType,
+  const api = { SPELL_RULES, romanize, checkSpelling, decompose, compose, isSyl, pronounce, RULES, EXCEPTIONS, conjugate, FORMS, IRREGULAR, irregularType,
                 readSino, readNative, readTime, readPrice, readMonth };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.KoEngine = api;

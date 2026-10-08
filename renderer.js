@@ -582,6 +582,253 @@
     return `<p class="example"><span class="ex-main"><span>${esc(x)}</span>${pron ? `<span class="ex-pron">[${esc(pron)}]</span>` : ""}</span>${speakBtn(x)}</p>`;
   }
 
+  /* ═════════ Hangul composition (for the on-screen keyboard) ═════════ */
+  const H_CHO = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+  const H_JUNG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
+  const H_JONG = ["", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+  const V_COMBO = { "ㅗㅏ": "ㅘ", "ㅗㅐ": "ㅙ", "ㅗㅣ": "ㅚ", "ㅜㅓ": "ㅝ", "ㅜㅔ": "ㅞ", "ㅜㅣ": "ㅟ", "ㅡㅣ": "ㅢ" };
+  const F_COMBO = { "ㄱㅅ": "ㄳ", "ㄴㅈ": "ㄵ", "ㄴㅎ": "ㄶ", "ㄹㄱ": "ㄺ", "ㄹㅁ": "ㄻ", "ㄹㅂ": "ㄼ", "ㄹㅅ": "ㄽ", "ㄹㅌ": "ㄾ", "ㄹㅍ": "ㄿ", "ㄹㅎ": "ㅀ", "ㅂㅅ": "ㅄ" };
+  const F_SPLIT = Object.fromEntries(Object.entries(F_COMBO).map(([k, v]) => [v, [k[0], k[1]]]));
+  const isVowel = j => H_JUNG.includes(j);
+  function composeJamo(seq) {
+    let out = "", cho = "", jung = "", jong = "";
+    const flush = () => {
+      if (cho && jung) out += String.fromCharCode(0xAC00 + H_CHO.indexOf(cho) * 588 + H_JUNG.indexOf(jung) * 28 + H_JONG.indexOf(jong));
+      else out += cho + jung + jong;
+      cho = jung = jong = "";
+    };
+    for (const j of seq) {
+      if (!isVowel(j)) {
+        if (!cho && !jung) cho = j;
+        else if (cho && !jung) { flush(); cho = j; }
+        else if (jung && !jong) { if (cho && H_JONG.includes(j)) jong = j; else { flush(); cho = j; } }
+        else if (F_COMBO[jong + j]) jong = F_COMBO[jong + j];
+        else { flush(); cho = j; }
+      } else {
+        if (jong) {
+          let move = jong;
+          if (F_SPLIT[jong]) { jong = F_SPLIT[jong][0]; move = F_SPLIT[move][1]; } else jong = "";
+          flush(); cho = move; jung = j;
+        } else if (jung) {
+          if (V_COMBO[jung + j]) jung = V_COMBO[jung + j]; else { flush(); jung = j; }
+        } else jung = j;
+      }
+    }
+    flush();
+    return out;
+  }
+
+  /* ═════════ On-screen 두벌식 keyboard, attached to any textarea or input ═════════ */
+  const KB_ROWS = [["ㅂ", "ㅈ", "ㄷ", "ㄱ", "ㅅ", "ㅛ", "ㅕ", "ㅑ", "ㅐ", "ㅔ"], ["ㅁ", "ㄴ", "ㅇ", "ㄹ", "ㅎ", "ㅗ", "ㅓ", "ㅏ", "ㅣ"], ["ㅋ", "ㅌ", "ㅊ", "ㅍ", "ㅠ", "ㅜ", "ㅡ"]];
+  const KB_LATIN = [["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"], ["a", "s", "d", "f", "g", "h", "j", "k", "l"], ["z", "x", "c", "v", "b", "n", "m"]];
+  const KB_SHIFT = { "ㅂ": "ㅃ", "ㅈ": "ㅉ", "ㄷ": "ㄸ", "ㄱ": "ㄲ", "ㅅ": "ㅆ", "ㅐ": "ㅒ", "ㅔ": "ㅖ" };
+  const LATIN_TO_JAMO = {};
+  KB_LATIN.forEach((row, r) => row.forEach((l, c) => { LATIN_TO_JAMO[l] = KB_ROWS[r][c]; LATIN_TO_JAMO[l.toUpperCase()] = KB_SHIFT[KB_ROWS[r][c]] || KB_ROWS[r][c]; }));
+
+  function keyboardHTML() {
+    return `<div class="kb" role="group" aria-label="Korean keyboard (두벌식)">
+      ${KB_ROWS.map((row, r) => `<div class="kb-row">${r === 2 ? `<button type="button" class="kb-key kb-wide" data-k="shift" aria-pressed="false">⇧ Shift</button>` : ""}${row.map((j, c) => `<button type="button" class="kb-key" data-k="${j}"><span class="kb-j" lang="ko">${j}</span><span class="kb-l">${KB_LATIN[r][c]}</span></button>`).join("")}${r === 2 ? `<button type="button" class="kb-key kb-wide" data-k="back" aria-label="Backspace">⌫</button>` : ""}</div>`).join("")}
+      <div class="kb-row"><button type="button" class="kb-key kb-space" data-k="space">space</button><button type="button" class="kb-key kb-wide" data-k="enter" aria-label="New line">↵</button></div>
+      <p class="kb-hint">Tip: while this keyboard is open you can also type on your own keyboard. The keys follow the standard Korean layout.</p>
+    </div>`;
+  }
+  // Wire a keyboard panel to a field. Composition happens on the pending jamo since the last space.
+  function attachKeyboard(panel, field, onChange) {
+    let seq = [], shift = false, own = false;
+    const tail = () => composeJamo(seq);
+    const put = j => {
+      const before = tail(); seq.push(j);
+      own = true;
+      field.value = field.value.slice(0, field.value.length - before.length) + tail();
+      field.selectionStart = field.selectionEnd = field.value.length;
+      own = false;
+      onChange && onChange();
+    };
+    const press = k => {
+      if (k === "shift") { shift = !shift; panel.querySelector('[data-k="shift"]').setAttribute("aria-pressed", String(shift)); refreshShift(); return; }
+      own = true;
+      if (k === "space") { field.value += " "; seq = []; }
+      else if (k === "enter") { field.value += "\n"; seq = []; }
+      else if (k === "back") {
+        if (seq.length) { const before = tail(); seq.pop(); field.value = field.value.slice(0, field.value.length - before.length) + tail(); }
+        else field.value = field.value.slice(0, -1);
+      } else {
+        own = false;
+        put(shift ? (KB_SHIFT[k] || k) : k);
+        if (shift) { shift = false; panel.querySelector('[data-k="shift"]').setAttribute("aria-pressed", "false"); refreshShift(); }
+        return;
+      }
+      own = false;
+      onChange && onChange();
+    };
+    const refreshShift = () => panel.querySelectorAll(".kb-key[data-k]").forEach(b => {
+      const base = b.dataset.base || b.dataset.k;
+      if (!KB_SHIFT[base]) return;
+      b.dataset.base = base;
+      b.querySelector(".kb-j").textContent = shift ? KB_SHIFT[base] : base;
+    });
+    panel.querySelectorAll(".kb-key").forEach(b => b.addEventListener("click", () => { press(b.dataset.base || b.dataset.k); field.focus({ preventScroll: true }); }));
+    field.addEventListener("input", () => { if (!own) seq = []; });
+    field.addEventListener("click", () => { seq = []; });
+    field.addEventListener("keydown", e => {
+      if (panel.hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "Backspace" && seq.length) { e.preventDefault(); press("back"); return; }
+      const j = LATIN_TO_JAMO[e.key];
+      if (j) { e.preventDefault(); put(j); }
+      else if (e.key === " ") seq = [];
+    });
+  }
+  // A "Korean keyboard" toggle under a field
+  function keyboardToggleHTML(id) {
+    return `<button type="button" class="btn btn-small btn-ghost kb-toggle" aria-expanded="false" aria-controls="${id}">⌨ Korean keyboard</button><div class="kb-panel" id="${id}" hidden>${keyboardHTML()}</div>`;
+  }
+  function wireKeyboardToggle(root, field, onChange) {
+    const btn = root.querySelector(".kb-toggle"), panel = root.querySelector(".kb-panel");
+    if (!btn || !panel || !field) return;
+    attachKeyboard(panel, field, onChange);
+    btn.addEventListener("click", () => { const open = panel.hidden; panel.hidden = !open; btn.setAttribute("aria-expanded", String(open)); if (open) field.focus({ preventScroll: true }); });
+  }
+
+  /* ═════════ Full Korean keyboard map (두벌식, 106-key) ═════════ */
+  function keyboardMapHTML() {
+    const num = [["`", "~"], ["1", "!"], ["2", "@"], ["3", "#"], ["4", "$"], ["5", "%"], ["6", "^"], ["7", "&"], ["8", "*"], ["9", "("], ["0", ")"], ["-", "_"], ["=", "+"]];
+    const k = (main, shift, cls = "") => `<span class="km-key ${cls}"><span class="km-s">${esc(shift || "")}</span><span class="km-m">${esc(main)}</span></span>`;
+    const jam = (r, c) => { const j = KB_ROWS[r][c]; return k(j, KB_SHIFT[j] || "", "ko"); };
+    return `<figure class="kmap" aria-labelledby="kmapCap">
+      <div class="km-board" lang="ko">
+        <div class="km-row">${num.map(([m, s]) => k(m, s)).join("")}${k("⌫", "", "w2")}</div>
+        <div class="km-row">${k("Tab", "", "w15")}${KB_ROWS[0].map((_, c) => jam(0, c)).join("")}${k("[", "{")}${k("]", "}")}${k("₩", "|", "w15 hl")}</div>
+        <div class="km-row">${k("Caps", "", "w18")}${KB_ROWS[1].map((_, c) => jam(1, c)).join("")}${k(";", ":")}${k("'", '"')}${k("Enter", "", "w22")}</div>
+        <div class="km-row">${k("Shift", "", "w24")}${KB_ROWS[2].map((_, c) => jam(2, c)).join("")}${k(",", "<")}${k(".", ">")}${k("/", "?")}${k("Shift", "", "w28")}</div>
+        <div class="km-row">${k("Ctrl", "", "w15")}${k("Alt", "", "w15")}${k("한자", "", "w15 hl")}${k("space", "", "w6")}${k("한/영", "", "w15 hl")}${k("Ctrl", "", "w15")}</div>
+      </div>
+      <figcaption id="kmapCap" class="tract-cap">The whole Korean keyboard. Small characters at the top of a key come with Shift. Keys marked in rose are the ones that differ from an English keyboard. Symbols sit where they do on a US layout.</figcaption>
+    </figure>`;
+  }
+
+  /* ═════════ Handwriting pad ═════════ */
+  function handPadHTML(defaultGhost = "") {
+    return `<div class="hand" data-ghost="${esc(defaultGhost)}">
+      <div class="hand-tools">
+        <label class="hand-ghost"><span>Trace</span><input type="text" class="input-ko hand-ghost-in" lang="ko" value="${esc(defaultGhost)}" placeholder="e.g. 한글" aria-label="Letters to trace" /></label>
+        <button type="button" class="btn btn-small btn-ghost" data-h="undo">Undo</button>
+        <button type="button" class="btn btn-small btn-ghost" data-h="clear">Clear</button>
+      </div>
+      <canvas class="hand-canvas" aria-label="Handwriting area: draw with your finger, pen or mouse"></canvas>
+      <p class="hand-hint">Draw with your finger, a pen or the mouse. Leave the trace box empty to write freely.</p>
+    </div>`;
+  }
+  function wireHandPad(root) {
+    root.querySelectorAll(".hand").forEach(box => {
+      const cv = box.querySelector(".hand-canvas"), ctx = cv.getContext("2d"), ghostIn = box.querySelector(".hand-ghost-in");
+      let strokes = [], cur = null;
+      const cells = () => Math.max(4, [...(ghostIn.value || "")].length);
+      const draw = () => {
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const n = cells(), wAvail = box.clientWidth, cell = Math.min(120, Math.floor(wAvail / n) - 2) || 80;
+        const cols = Math.max(1, Math.min(n, Math.floor(wAvail / cell))), rows = Math.ceil(n / cols);
+        cv.style.width = cols * cell + "px"; cv.style.height = rows * cell + "px";
+        cv.width = cols * cell * dpr; cv.height = rows * cell * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cols * cell, rows * cell);
+        const ghost = [...(ghostIn.value || "")];
+        for (let k = 0; k < n; k++) {
+          const x = (k % cols) * cell, y = Math.floor(k / cols) * cell;
+          ctx.strokeStyle = "#EBA9B3"; ctx.lineWidth = 1.2; ctx.setLineDash([]); ctx.strokeRect(x + .5, y + .5, cell - 1, cell - 1);
+          ctx.strokeStyle = "#F3D2D8"; ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.moveTo(x + cell / 2, y + 6); ctx.lineTo(x + cell / 2, y + cell - 6); ctx.moveTo(x + 6, y + cell / 2); ctx.lineTo(x + cell - 6, y + cell / 2); ctx.stroke();
+          ctx.setLineDash([]);
+          if (ghost[k] && ghost[k] !== " ") {
+            ctx.fillStyle = "rgba(42, 36, 34, .12)"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.font = `${Math.round(cell * .72)}px Hahmlet, "Noto Sans KR", sans-serif`;
+            ctx.fillText(ghost[k], x + cell / 2, y + cell / 2 + cell * .03);
+          }
+        }
+        ctx.strokeStyle = "#2A2422"; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, cell / 26);
+        strokes.forEach(s => { ctx.beginPath(); s.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); if (s.length === 1) ctx.lineTo(s[0][0] + .1, s[0][1]); ctx.stroke(); });
+      };
+      const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+      cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); cur = [pos(e)]; strokes.push(cur); draw(); e.preventDefault(); });
+      cv.addEventListener("pointermove", e => { if (!cur) return; cur.push(pos(e)); draw(); });
+      const end = () => { if (cur && cur.length) markActive(); cur = null; };
+      cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+      box.querySelector('[data-h="undo"]').addEventListener("click", () => { strokes.pop(); draw(); });
+      box.querySelector('[data-h="clear"]').addEventListener("click", () => { strokes = []; draw(); });
+      ghostIn.addEventListener("input", draw);
+      const ro = new ResizeObserver(draw); ro.observe(box);
+      draw();
+    });
+  }
+
+  /* ═════════ Vocal tract diagram (조음 위치) ═════════ */
+  const PLACES = [
+    { id: "lips",   ko: "입술소리", term: "양순음", en: "Bilabial · both lips", cons: "ㅂ ㅃ ㅍ ㅁ", x: 84, y: 197, lx: 12, ly: 246, ex: 64, ey: 240 },
+    { id: "ridge",  ko: "잇몸소리", term: "치조음", en: "Alveolar · the ridge behind the upper teeth", cons: "ㄷ ㄸ ㅌ ㅅ ㅆ ㄴ ㄹ", x: 112, y: 182, lx: 12, ly: 122, ex: 64, ey: 126 },
+    { id: "hard",   ko: "센입천장소리", term: "경구개음", en: "Palatal · the hard palate", cons: "ㅈ ㅉ ㅊ", x: 166, y: 166, lx: 120, ly: 88, ex: 160, ey: 94 },
+    { id: "soft",   ko: "여린입천장소리", term: "연구개음", en: "Velar · the soft palate", cons: "ㄱ ㄲ ㅋ ㅇ", x: 240, y: 174, lx: 262, ly: 108, ex: 290, ey: 114 },
+    { id: "glottis",ko: "목청소리", term: "성문음 (후음)", en: "Glottal · between the vocal folds", cons: "ㅎ", x: 265, y: 312, lx: 300, ly: 344, ex: 318, ey: 334 }
+  ];
+  function vocalTractHTML() {
+    return `
+      <figure class="tract" aria-labelledby="tractCap">
+        <div class="tract-chips" role="group" aria-label="Places of articulation">
+          ${PLACES.map((p, k) => `<button type="button" class="tract-chip" data-place="${p.id}" aria-pressed="${k === 0}"><span lang="ko">${p.ko}</span></button>`).join("")}
+          <button type="button" class="tract-chip" data-place="nasal" aria-pressed="false"><span lang="ko">콧소리</span> (nasal)</button>
+        </div>
+        <div class="tract-body">
+          <svg viewBox="0 0 400 380" class="tract-svg" role="img" aria-label="Cross-section of the head showing where Korean consonants are made">
+            <!-- head, facing left -->
+            <path class="t-skin" d="M120 40 C 108 70, 104 92, 106 108 C 98 122, 66 136, 56 148 C 58 157, 74 162, 90 162 C 86 168, 80 174, 80 180 C 82 186, 88 190, 92 192 C 88 196, 80 200, 80 205 C 82 210, 88 214, 92 214 C 88 224, 86 236, 90 248 C 96 260, 110 266, 130 268 C 160 270, 182 274, 196 288 L 200 372 L 306 372 L 310 270 C 340 240, 356 200, 352 150 C 348 80, 290 20, 210 18 C 170 18, 136 26, 120 40 Z"/>
+            <!-- nasal cavity -->
+            <path class="t-air t-nasal" d="M88 158 C 110 148, 160 140, 210 142 C 240 144, 262 152, 272 168 L 262 172 C 250 160, 230 156, 205 156 C 160 156, 120 162, 92 166 Z"/>
+            <!-- mouth and throat -->
+            <path class="t-air" d="M96 192 C 110 186, 130 182, 160 178 C 196 174, 226 176, 246 186 C 258 192, 264 204, 268 216 L 272 230 C 276 260, 276 290, 272 330 L 258 330 C 258 300, 256 270, 250 248 C 240 222, 210 206, 170 204 C 140 203, 116 204, 96 206 Z"/>
+            <!-- hard palate (bone) -->
+            <path class="t-bone" d="M104 172 C 130 166, 170 160, 210 160 C 220 160, 228 162, 234 164 L 232 172 C 220 168, 205 168, 186 170 C 156 172, 128 178, 108 184 Z"/>
+            <!-- soft palate and uvula -->
+            <path class="t-soft" d="M232 164 C 250 170, 262 184, 266 200 C 268 210, 262 212, 258 206 C 252 190, 244 180, 232 172 Z"/>
+            <!-- teeth -->
+            <path class="t-tooth" d="M97 178 L 106 176 L 108 191 L 99 192 Z"/>
+            <path class="t-tooth" d="M98 201 L 107 200 L 107 214 L 99 214 Z"/>
+            <!-- tongue -->
+            <path class="t-tongue" d="M106 206 C 116 200, 132 198, 150 197 C 186 196, 216 204, 236 220 C 248 232, 252 252, 252 272 C 252 288, 250 300, 246 310 L 216 312 C 192 300, 160 286, 136 268 C 120 254, 110 238, 106 222 Z"/>
+            <!-- epiglottis and vocal folds -->
+            <path class="t-soft" d="M248 268 C 258 262, 266 268, 264 278 L 254 276 Z"/>
+            <path class="t-fold" d="M258 312 L 272 312"/>
+            <!-- part names -->
+            <text class="t-part" x="168" y="153">nasal cavity</text>
+            <text class="t-part" x="164" y="252">tongue</text>
+            <text class="t-part" x="222" y="364">throat</text>
+            <!-- places -->
+            ${PLACES.map(p => `
+              <g class="t-place" data-place="${p.id}">
+                <line x1="${p.x}" y1="${p.y}" x2="${p.ex}" y2="${p.ey}" class="t-lead"/>
+                <circle cx="${p.x}" cy="${p.y}" r="7" class="t-dot"/>
+                <text x="${p.lx}" y="${p.ly}" class="t-label" lang="ko">${p.ko}</text>
+              </g>`).join("")}
+          </svg>
+          <div class="tract-info" id="tractInfo" aria-live="polite"></div>
+        </div>
+        <figcaption id="tractCap" class="tract-cap">Tap a place to see which consonants are made there. A simplified drawing, not to scale.</figcaption>
+      </figure>`;
+  }
+  function wireVocalTract(root) {
+    const fig = root.querySelector(".tract");
+    if (!fig) return;
+    const show = id => {
+      fig.querySelectorAll(".tract-chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.place === id)));
+      fig.querySelectorAll(".t-place").forEach(g => g.classList.toggle("on", g.dataset.place === id));
+      fig.querySelector(".t-nasal").classList.toggle("on", id === "nasal");
+      const p = PLACES.find(x => x.id === id);
+      fig.querySelector("#tractInfo").innerHTML = p
+        ? `<p class="ti-ko" lang="ko">${p.ko} <span>${p.term}</span></p><p class="ti-en">${p.en}</p><p class="ti-cons" lang="ko">${p.cons}</p>`
+        : `<p class="ti-ko" lang="ko">콧소리 <span>비음</span></p><p class="ti-en">Nasal · air flows out through the nose</p><p class="ti-cons" lang="ko">ㅁ ㄴ ㅇ</p><p class="ti-note">Same places as ㅂ, ㄷ, ㄱ, but the soft palate lowers and air goes through the nose.</p>`;
+    };
+    fig.querySelectorAll(".tract-chip").forEach(b => b.addEventListener("click", () => show(b.dataset.place)));
+    fig.querySelectorAll(".t-place").forEach(g => g.addEventListener("click", () => show(g.dataset.place)));
+    show("lips");
+  }
+
   function lessonHTML(i, j) {
     const u = UNITS[i], l = u.lessons[j];
     const id = lessonId(i, j), isDone = state.done.has(id), mission = l.kind === "mission";
@@ -606,6 +853,9 @@
         ${mission
           ? `<ul class="checklist" lang="ko">${l.p.map((p, k) => `<li><label><input type="checkbox" data-check="${k}" ${checks[k] ? "checked" : ""}/><span>${esc(p)}</span></label></li>`).join("")}</ul>`
           : `<ol class="key-ideas" lang="ko">${l.p.map(p => `<li><span>${highlight(p)}</span></li>`).join("")}</ol>`}
+        ${l.figure === "vocal-tract" ? vocalTractHTML() : ""}
+        ${l.figure === "handwriting" ? handPadHTML(l.ghost || "") : ""}
+        ${l.figure === "keyboard" ? `<h3 class="block-h fig-h">The whole keyboard</h3>${keyboardMapHTML()}<h3 class="block-h fig-h">Try it</h3><div class="kb-demo"><label class="sr-only" for="kbDemo">Type here</label><textarea id="kbDemo" class="draft" lang="ko" rows="2" placeholder="Try: ㅎ ㅏ ㄴ ㄱ ㅡ ㄹ → 한글"></textarea>${keyboardHTML()}</div>` : ""}
         ${l.table ? `<div class="table-wrap lesson-table"><table class="deep-table"><thead><tr>${l.table.head.map(x => `<th scope="col">${esc(x)}</th>`).join("")}</tr></thead><tbody>${l.table.rows.map(row => `<tr>${row.map((c, ci) => ci === 0 ? `<th scope="row">${esc(c)}</th>` : `<td lang="ko">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
       </section>
 
@@ -617,9 +867,10 @@
       ${mission ? `
       <section class="lesson-block b-turn">
         <h3 class="block-h"><label for="draft">Your turn</label></h3>
-        <textarea id="draft" class="draft" lang="ko" rows="8" placeholder="여기에 써 보세요…">${esc(state.drafts[id] || "")}</textarea>
+        ${l.handwriting ? `<p class="hand-intro">First, by hand:</p>${handPadHTML(l.ghost || "")}<p class="hand-intro">Then, typed:</p>` : ""}
+        <textarea id="draft" class="draft" lang="ko" rows="${l.handwriting ? 2 : 8}" placeholder="여기에 써 보세요…">${esc(state.drafts[id] || "")}</textarea>
         <p class="draft-meta"><span id="draftCount"></span> Saved as you type. It's also in your Notebook.</p>
-        <button type="button" class="btn btn-small btn-ghost" id="checkDraft">Check common mistakes</button>
+        <div class="draft-tools"><button type="button" class="btn btn-small btn-ghost" id="checkDraft">Check common mistakes</button>${keyboardToggleHTML("kbDraft")}</div>
         <div class="tool-out" id="draftCheck" aria-live="polite"></div>
       </section>` : ""}
 
@@ -641,6 +892,10 @@
 
   function wireLesson(i, j) {
     const root = $("#placeBody");
+    wireVocalTract(root);
+    wireHandPad(root);
+    const demo = $("#kbDemo");
+    if (demo) attachKeyboard(root.querySelector(".kb-demo .kb"), demo);
     root.querySelector(".pron-toggle")?.addEventListener("click", e => {
       state.showPron = !state.showPron; save();
       e.currentTarget.setAttribute("aria-pressed", String(state.showPron));
@@ -666,6 +921,7 @@
       let t;
       ta.addEventListener("input", () => { count(); clearTimeout(t); t = setTimeout(() => { state.drafts[id] = ta.value; if (ta.value.trim()) markActive(); save(); }, 400); });
       $("#checkDraft").addEventListener("click", () => { $("#draftCheck").innerHTML = spellHTML(ta.value); });
+      wireKeyboardToggle(ta.closest(".lesson-block"), ta, () => { count(); state.drafts[id] = ta.value; save(); });
       $$("[data-check]", root).forEach(c => c.addEventListener("change", () => {
         const arr = state.checks[id] || []; arr[Number(c.dataset.check)] = c.checked; state.checks[id] = arr; save();
       }));
@@ -1046,7 +1302,7 @@
       head.append(text, btn);
       sec.append(head, body);
       const set = closed => { sec.classList.toggle("closed", closed); btn.setAttribute("aria-expanded", String(!closed)); body.hidden = closed; };
-      set(!!state.labClosed[sec.id]);
+      set(state.labClosed[sec.id] !== false);
       const toggle = () => { const c = !sec.classList.contains("closed"); set(c); state.labClosed[sec.id] = c; save(); };
       btn.addEventListener("click", e => { e.stopPropagation(); toggle(); });
       h.style.cursor = "pointer"; h.addEventListener("click", toggle);
@@ -1961,7 +2217,7 @@
         <label class="sr-only" for="diaryIn">Today's diary</label>
         <textarea id="diaryIn" class="draft diary-text" lang="ko" rows="9" placeholder="오늘은…">${esc(state.diary[today] || "")}</textarea>
         <p class="draft-meta"><span id="diaryCount"></span> Saved as you type.</p>
-        <button type="button" class="btn btn-small btn-ghost" id="diaryCheck">Check common mistakes</button>
+        <div class="draft-tools"><button type="button" class="btn btn-small btn-ghost" id="diaryCheck">Check common mistakes</button>${keyboardToggleHTML("kbDiary")}</div>
         <div class="tool-out" id="diaryOut" aria-live="polite"></div>
       </section>
       ${past.length ? `<section class="diary-past"><h2 class="sub-h">Earlier entries</h2><ul class="drafts">${past.map(([k, t]) => `<li><p class="draft-title">${fmt(k)}</p><p class="draft-text" lang="ko">${esc(t)}</p></li>`).join("")}</ul></section>` : ""}`;
@@ -1974,11 +2230,47 @@
       t = setTimeout(() => { state.diary[today] = ta.value; if (ta.value.trim()) markActive(); save(); $(".diary-streak .today-num").textContent = diaryStreak(); }, 400);
     });
     $("#diaryCheck").addEventListener("click", () => { $("#diaryOut").innerHTML = spellHTML(ta.value); });
+    wireKeyboardToggle($(".diary-today"), ta, () => { count(); state.diary[today] = ta.value; save(); });
+  }
+
+  /* ═════════ Install as an app ═════════ */
+  let installPrompt = null;
+  const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; updateInstallUI(); });
+  window.addEventListener("appinstalled", () => { installPrompt = null; updateInstallUI(); toast("Installed. You'll find the app on your home screen."); });
+  function updateInstallUI() {
+    const top = $("#installBtn"); if (top) top.hidden = !installPrompt || isStandalone();
+    if (!$("[data-view='settings']").hidden) renderInstallBlock();
+  }
+  async function promptInstall() {
+    if (!installPrompt) { location.hash = "#/settings"; return; }
+    installPrompt.prompt();
+    const choice = await installPrompt.userChoice.catch(() => null);
+    installPrompt = null; updateInstallUI();
+    if (choice && choice.outcome === "accepted") toast("Installing…");
+  }
+  function renderInstallBlock() {
+    const box = $("#installBlock"); if (!box) return;
+    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && "ontouchend" in document);
+    const online = /^https?:$/.test(location.protocol);
+    box.innerHTML = isStandalone() ? `<p class="backup-sub">You're using the installed app.</p>`
+      : installPrompt ? `<p class="backup-sub">Install it like an app: it opens in its own window, works offline, and sits on your home screen or dock.</p><div class="backup-actions"><button class="btn btn-small btn-primary" type="button" id="installNow">Install the app</button></div>`
+      : `<p class="backup-sub">${!online ? "Installing works once the site is online at an https address. Then:" : "Your browser can install it from its menu:"}</p>
+         <ul class="install-steps">
+           <li><strong>iPhone / iPad (Safari):</strong> tap Share, then <em>Add to Home Screen</em>.</li>
+           <li><strong>Android (Chrome):</strong> tap the ⋮ menu, then <em>Install app</em>.</li>
+           <li><strong>Computer (Chrome / Edge):</strong> click the install icon at the right end of the address bar.</li>
+         </ul>${ios ? `<p class="backup-sub">On iPhone and iPad this is the only way; Apple doesn't show an install button inside websites.</p>` : ""}`;
+    $("#installNow")?.addEventListener("click", promptInstall);
   }
 
   /* ═════════ Settings ═════════ */
   function renderSettings() {
     $("#settingsBody").innerHTML = `
+      <section class="set-block">
+        <h2 class="sub-h">Install the app</h2>
+        <div id="installBlock"></div>
+      </section>
       <section class="set-block">
         <h2 class="sub-h">Backup</h2>
         <p class="backup-title">Your progress lives in this browser only.</p>
@@ -2011,9 +2303,10 @@
         <div class="backup-actions"><button class="btn btn-small btn-ghost danger" id="resetBtn" type="button">Reset progress</button></div>
       </section>`;
     renderBackupStatus();
+    renderInstallBlock();
     $("#voiceCount").textContent = `${collectVoiceLines().length} lines`;
     $("#voiceListBtn").addEventListener("click", downloadVoiceList);
-    $("#guideAgain").addEventListener("click", () => { state.guides = {}; save(); location.hash = "#/"; });
+    $("#guideAgain").addEventListener("click", () => { state.guides = {}; state.introSeen = false; save(); location.hash = "#/"; setTimeout(maybeShowGuide, 50); });
     $("#setRoam").addEventListener("change", e => { state.freeRoam = e.target.checked; $("#freeRoam").checked = state.freeRoam; save(); });
     $("#setSplash").addEventListener("change", e => { state.showSplash = e.target.checked; save(); });
     $("#setTTS").addEventListener("change", e => { state.ttsFallback = e.target.checked; save(); });
@@ -2048,7 +2341,7 @@
       [".back-link", "Choose another place on the map.", { shape: "circle" }]
     ],
     reading: [
-      [".deep-level", "A text for every neighborhood, grouped by level. Locked ones open as you move along the map.", { shape: "circle" }]
+      ["union:.deep-level .deep-level-h|.deep-level .read-index li", "A text for every neighborhood, grouped by level. Locked ones open as you move along the map.", { shape: "circle" }]
     ],
     "reading-article": [
       [".read-chat, .read-prose, .read-sign", "Read it, and tap the speaker to hear a line.", { shape: "circle" }],
@@ -2062,9 +2355,9 @@
       ["#diaryCheck", "Check for common spelling mistakes."]
     ],
     lab: [
-      ["#tool-pron .tool-head", "Type any word to see how it's pronounced, and why.", { shape: "circle" }],
-      ["#tool-conj .tool-head", "Conjugate any verb, irregular ones too.", { shape: "circle" }],
-      ["#tool-pron .tool-toggle", "Fold a tool away when you don't need it."]
+      ["#tool-pron", "Quick, practical checks: how a word is pronounced, how a verb conjugates, how a number is read.", { shape: "circle" }],
+      ["#pronIn", "Type any word here to see how it's pronounced, and why.", { shape: "wave" }],
+      ["#tool-conj .tool-head", "Every tool opens and folds away like this one.", { shape: "circle" }]
     ],
     dictionary: [
       ["#dictIn", "Search in Korean, English, or by initials like ㅎㄱ."],
@@ -2113,6 +2406,15 @@
     return cs.display !== "none" && cs.visibility !== "hidden" && !el.closest("[hidden]");
   };
   function guideTarget(sel) {
+    if (sel.startsWith("union:")) {
+      const els = sel.slice(6).split("|").map(s => [...$$(s.trim())].find(visible)).filter(Boolean);
+      if (!els.length) return null;
+      return { getBoundingClientRect() {
+        const rs = els.map(e => e.getBoundingClientRect());
+        const l = Math.min(...rs.map(x => x.left)), t = Math.min(...rs.map(x => x.top)), rr = Math.max(...rs.map(x => x.right)), b = Math.max(...rs.map(x => x.bottom));
+        return { left: l, top: t, right: rr, bottom: b, width: rr - l, height: b - t };
+      }, querySelector: () => null, isUnion: true };
+    }
     if (sel.startsWith("nav:")) { const k = sel.slice(4); return [...$$(`.mainnav [data-nav="${k}"], .tabbar [data-nav="${k}"]`)].find(visible); }
     // try each comma-separated part in order, so the first listed wins
     for (const part of sel.split(",")) { const el = [...$$(part.trim())].find(visible); if (el) return el; }
@@ -2123,15 +2425,18 @@
     maybeShowGuide.t = setTimeout(() => {
       if (!$("#splash").hidden || !$("#guide").hidden || drawer.classList.contains("open")) return;
       const key = guideKey();
+      if (key === "journey" && !state.introSeen && state.guides.journey) { showIntro(() => { const g = $("#guide"); g.hidden = true; document.body.classList.remove("guide-on"); }); return; }
       if (!key || !GUIDES[key] || state.guides[key]) return;
       if (key === "dictionary" && fullState === "loading") return; // shown once the list settles
+      if (key === "lab") labTourOpen(true);
       const steps = guideSteps(key);
-      if (steps.length) startGuide(key, steps);
+      if (steps.length) startGuide(key, steps); else if (key === "lab") labTourOpen(false);
     }, 500);
   }
   function replayGuide() {
     if (!$("#guide").hidden) closeGuide();
     const key = guideKey();
+    if (key === "lab") labTourOpen(true);
     const steps = key ? guideSteps(key) : [];
     if (steps.length) startGuide(key, steps, key === "journey"); else toast("There's no guide for this screen.");
   }
@@ -2159,7 +2464,14 @@
     $("#introGo").addEventListener("click", () => { state.introSeen = true; save(); g.innerHTML = ""; then(); });
     $("#introSkip").addEventListener("click", () => { state.introSeen = true; state.guides.journey = true; save(); g.hidden = true; g.innerHTML = ""; document.body.classList.remove("guide-on"); });
   }
+  function labTourOpen(open) {
+    const sec = $("#tool-pron"); if (!sec) return;
+    const btn = sec.querySelector(".tool-toggle"), body = sec.querySelector(".tool-body");
+    if (open) { sec.classList.remove("closed"); if (body) body.hidden = false; btn?.setAttribute("aria-expanded", "true"); }
+    else if (state.labClosed[sec.id] !== false) { sec.classList.add("closed"); if (body) body.hidden = true; btn?.setAttribute("aria-expanded", "false"); }
+  }
   function startGuide(view, steps, withIntro) {
+    if (view === "lab") { labTourOpen(true); steps = guideSteps("lab"); }
     if (view === "journey" && (withIntro || !state.introSeen)) { showIntro(() => startGuide(view, steps, false)); return; }
     guideRun = { view, steps, i: 0 };
     $("#guide").hidden = false;
@@ -2172,7 +2484,7 @@
     const { steps, i } = guideRun, s = steps[i];
     let el = guideTarget(s.sel);
     // very tall targets (a whole practice block, a long article) are marked by their heading instead
-    if (el && el.getBoundingClientRect().height > innerHeight * .45) el = el.querySelector(".practice-head, h2, h3, .block-h") || el;
+    if (el && !el.isUnion && el.getBoundingClientRect().height > innerHeight * .45) el = el.querySelector(".practice-head, h2, h3, .block-h") || el;
     const g = $("#guide");
     if (!el) { nextGuideStep(1); return; }
     const r0 = el.getBoundingClientRect();
@@ -2189,7 +2501,7 @@
     // a calm hand-drawn loop: smooth wobble, slight overshoot where the pen meets the start
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const rx = Math.min(r.width / 2 + 16, W / 2 - 8), ry = r.height / 2 + 13;
-    const wideT = s.opt.shape !== "circle" && (rx > 170 || r.width / Math.max(r.height, 1) > 4.5);
+    const wideT = s.opt.shape === "wave" || (s.opt.shape !== "circle" && (rx > 170 || r.width / Math.max(r.height, 1) > 4.5));
     const above = wideT ? r.bottom + 140 > H : cy > H * .55;
     const a0 = -Math.PI * .62, phase = i * 1.3;
     const wide = wideT;
@@ -2210,9 +2522,19 @@
       d += (k ? " L" : "M") + (cx + Math.cos(t) * rx * wob * shrink).toFixed(1) + " " + (cy + Math.sin(t) * ry * wob * shrink).toFixed(1);
     }
     const lines = []; text.split(" ").forEach(w => { const l = lines[lines.length - 1]; if (!l || (l + " " + w).length > (W < 600 ? 22 : 30)) lines.push(w); else lines[lines.length - 1] = l + " " + w; });
-    const lx = Math.min(Math.max(cx, 130), W - 130);
+    const halfW = Math.max(...lines.map(l => l.length)) * 5.8 + 18;
+    const lx = Math.min(Math.max(cx, halfW), W - halfW);
     let ly = wideT ? (above ? r.top - 74 - (lines.length - 1) * 26 : r.bottom + 76) : (above ? cy - ry - 64 - (lines.length - 1) * 26 : cy + ry + 62);
     ly = Math.min(Math.max(ly, 110), H - 40 - (lines.length - 1) * 26);
+    // keep notes clear of the card's home at the bottom, so the card rarely has to move
+    {
+      const cW = W <= 700 ? Math.min(300, W - 104) : 340, cL = W <= 700 ? 16 : (W - cW) / 2;
+      const bandTop = H - 32 - 64 - (W <= 960 ? 64 : 0);
+      const lw = Math.max(...lines.map(l => l.length)) * 11;
+      const overlapsX = !(lx + lw / 2 < cL || lx - lw / 2 > cL + cW);
+      const lastLine = ly + (lines.length - 1) * 26 + 8;
+      if (above && overlapsX && lastLine > bandTop - 6) ly = bandTop - 14 - (lines.length - 1) * 26 - 8;
+    }
     // "side": put the note in the empty space to the right of the target
     const longest = Math.max(...lines.map(l => l.length)) * 11;
     const sideOK = s.opt.side === "right" && (W - (cx + rx) > longest + 90);
@@ -2223,10 +2545,20 @@
     // pick the card position that doesn't cover the drawing or its note
     const tLx = sideOK ? cx + rx + 58 : lx, tLy = sideOK ? cy + 7 - (lines.length - 1) * 13 : ly;
     const drawTop = Math.min(cy - ry, tLy - 24) - 12, drawBottom = Math.max(cy + ry, tLy + (lines.length - 1) * 26 + 10) + 12;
-    const cardH = 64, topBand = [74, 74 + cardH], botBand = [H - 32 - cardH - (W <= 960 ? 64 : 0), H - 32 - (W <= 960 ? 64 : 0)];
-    const hits = band => !(drawBottom < band[0] || drawTop > band[1]);
-    const cardTop = hits(botBand) && !hits(topBand) ? true : !hits(botBand) ? false : (drawTop > H - drawBottom);
+    const textL = sideOK ? tLx : lx - longest / 2, textR = sideOK ? tLx + longest : lx + longest / 2;
+    const drawLeft = Math.min(cx - rx, textL) - 12, drawRight = Math.max(cx + rx, textR) + 12;
+    // the card stays at the bottom centre unless that would cover the drawing or its note
+    const cardH = 64, cardW = W <= 700 ? Math.min(300, W - 104) : 340, cardL = W <= 700 ? 16 : (W - cardW) / 2, cardR = cardL + cardW;
+    const topBand = [74, 74 + cardH], botBand = [H - 32 - cardH - (W <= 960 ? 64 : 0), H - 32 - (W <= 960 ? 64 : 0)];
+    // test the loop and the note separately; the arrow between them may pass behind the card
+    const boxes = [
+      [cx - rx - 8, cy - ry - 8, cx + rx + 8, cy + ry + 8],
+      [textL - 8, tLy - 26, textR + 8, tLy + (lines.length - 1) * 26 + 10]
+    ];
+    const hits = band => boxes.some(([l, t, rr, bb]) => !(bb < band[0] || t > band[1]) && !(rr < cardL || l > cardR));
+    const cardTop = hits(botBand) && !hits(topBand);
     g.innerHTML = `
+      <div class="guide-spot" style="left:${(r.left - 8).toFixed(1)}px;top:${(r.top - 8).toFixed(1)}px;width:${(r.width + 16).toFixed(1)}px;height:${(r.height + 16).toFixed(1)}px"></div>
       <svg class="guide-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <defs><filter id="crayon" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.1"/></filter></defs>
         <g filter="url(#crayon)">
@@ -2263,7 +2595,7 @@
   }
   function closeGuide() {
     const g = $("#guide");
-    if (guideRun) { state.guides[guideRun.view] = true; save(); }
+    if (guideRun) { state.guides[guideRun.view] = true; save(); if (guideRun.view === "lab") labTourOpen(false); }
     guideRun = null;
     g.hidden = true; g.innerHTML = "";
     document.body.classList.remove("guide-on");
@@ -2284,17 +2616,18 @@
     const roam = $("#freeRoam");
     roam.checked = state.freeRoam;
     roam.addEventListener("change", () => { state.freeRoam = roam.checked; save(); renderMap(); });
-    $("#heroStart").addEventListener("click", () => openUnit(currentUnit()));
-    $("#placementBtn").addEventListener("click", e => openPlacement(e.currentTarget));
-    $("#notesFab").addEventListener("click", toggleNotes);
-    $("#helpBtn").addEventListener("click", replayGuide);
+    $("#heroStart")?.addEventListener("click", () => openUnit(currentUnit()));
+    $("#placementBtn")?.addEventListener("click", e => openPlacement(e.currentTarget));
+    $("#notesFab")?.addEventListener("click", toggleNotes);
+    $("#helpBtn")?.addEventListener("click", replayGuide);
+    $("#installBtn")?.addEventListener("click", promptInstall);
     const toTop = $("#toTop");
     const onScroll = () => { toTop.hidden = window.scrollY < 600; };
     window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
     toTop.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); $("#main").focus?.({ preventScroll: true }); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#notesPanel").hidden && !drawer.classList.contains("open")) toggleNotes(); });
-    $("#splashGo").addEventListener("click", () => hideSplash(maybeShowGuide));
-    $("#splashPlace").addEventListener("click", () => hideSplash(() => openPlacement()));
+    $("#splashGo")?.addEventListener("click", () => hideSplash(maybeShowGuide));
+    $("#splashPlace")?.addEventListener("click", () => hideSplash(() => openPlacement()));
     let seen = false;
     try { seen = sessionStorage.getItem("lss:splash") === "1"; } catch {}
     const atHome = !location.hash || location.hash === "#/" || location.hash === "#";

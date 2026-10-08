@@ -6,9 +6,37 @@
    ========================================================= */
 
 const MORE_LESSONS = {
+  /* ── A0 광화문 ── */
+  gwanghwamun: [
+    { t: "Writing by hand", k: "획순 (쓰는 순서)", figure: "handwriting", ghost: "한글",
+      s: "Hangul is written stroke by stroke in a fixed order. Following it keeps your letters even and easy to read.",
+      p: ["Strokes go from top to bottom and from left to right.",
+          "ㅇ is a single stroke: start at the top and go round counterclockwise.",
+          "Inside a block, write in sound order: first consonant, then the vowel, then the final consonant at the bottom.",
+          "Some letters change shape in a block: before ㅏ, ㄱ leans and sweeps down (가); above ㅗ it sits flat (고)."],
+      ex: ["ㄱ (1) · ㄴ (1) · ㄷ (2) · ㄹ (3)", "ㅁ (3) · ㅂ (4) · ㅇ (1) · ㅎ (3)", "가 · 고 · 각"],
+      q: [["Which way do strokes usually go?", ["bottom to top, right to left", "top to bottom, left to right", "in any order", "right to left only"], 1, "Top to bottom, left to right."],
+          ["How do you draw ㅇ?", ["two half circles", "one stroke from the top, counterclockwise", "one stroke from the bottom, clockwise", "a square"], 1, "One stroke, starting at the top."],
+          ["In which order do you write 한?", ["ㄴ, ㅏ, ㅎ", "ㅎ, ㅏ, ㄴ", "ㅏ, ㅎ, ㄴ", "ㅎ, ㄴ, ㅏ"], 1, "First consonant, vowel, then the final."],
+          ["In 가, compared with 고, the ㄱ…", ["looks exactly the same", "leans and sweeps down", "is written in two strokes", "is written last"], 1, "Next to a vertical vowel, ㄱ leans."]] },
+    { t: "Typing Hangul", k: "한글 자판 (두벌식)", figure: "keyboard",
+      s: "On a Korean keyboard you type the letters in sound order, and the blocks build themselves.",
+      p: ["The standard layout (두벌식) puts consonants under the left hand and vowels under the right.",
+          "Type in sound order: ㅎ ㅏ ㄴ ㄱ ㅡ ㄹ becomes 한글. A final consonant jumps to the next block when a vowel follows it.",
+          "Shift gives the tense consonants ㄲ ㄸ ㅃ ㅆ ㅉ and the vowels ㅒ ㅖ.",
+          "To type on your own device, add Korean (2-Set / 두벌식) in the language or keyboard settings, then switch with the 한/영 key, Right Alt on Windows, or Ctrl+Space or Caps Lock on a Mac.",
+          "Korean keyboards add a 한자 key left of the space bar and a 한/영 key to its right, and show ₩ where others have a backslash. Other symbols sit where they do on a US keyboard. On Windows, type a consonant such as ㅁ and press 한자 to pick symbols like ※ ★ ○."],
+      ex: ["ㅎ ㅏ ㄴ ㄱ ㅡ ㄹ → 한글", "ㅇ ㅏ ㄴ ㄴ ㅕ ㅇ → 안녕", "Shift + ㄱ → ㄲ"],
+      q: [["On a 두벌식 keyboard, the consonants are under…", ["the left hand", "the right hand", "the top row only", "both hands equally"], 0, "Consonants left, vowels right."],
+          ["What do you get when you type ㅎ ㅏ ㄴ ㄱ ㅡ ㄹ?", ["한글", "하ㄴ글", "핟글", "한그ㄹ"], 0, "The keyboard assembles the blocks."],
+          ["How do you type ㄲ?", ["press ㄱ twice", "Shift + ㄱ", "Alt + ㄱ", "it isn't on the keyboard"], 1, "Shift gives the tense consonants."],
+          ["Which keyboard should you add in your settings?", ["Korean (2-Set / 두벌식)", "Korean (3-Set) only", "Japanese", "Chinese"], 0, "2-Set is the standard layout."],
+          ["On a Korean keyboard, what does the key right of the space bar do?", ["types ₩", "switches between Korean and English (한/영)", "opens the symbol list", "types a space"], 1, "한/영 switches input; 한자 is on the left."]] }
+  ],
+
   /* ── A0 서촌 ── */
   seochon: [
-    { t: "Where sounds are made", k: "조음 위치와 조음 방법",
+    { t: "Where sounds are made", k: "조음 위치와 조음 방법", figure: "vocal-tract",
       s: "Every consonant has an address: where in the mouth it's made, and how the air gets through.",
       p: ["Place: both lips (ㅂ ㅃ ㅍ ㅁ), the ridge behind the teeth (ㄷ ㄸ ㅌ ㄴ ㄹ ㅅ ㅆ), the hard palate (ㅈ ㅉ ㅊ), the soft palate (ㄱ ㄲ ㅋ ㅇ), the throat (ㅎ).",
           "Manner: stops close and release (ㄱ ㄷ ㅂ), affricates release slowly (ㅈ ㅉ ㅊ), fricatives hiss (ㅅ ㅆ ㅎ), nasals send air through the nose (ㄴ ㅁ ㅇ), and ㄹ is the liquid.",
