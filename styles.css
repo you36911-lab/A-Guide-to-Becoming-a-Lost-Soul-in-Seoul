@@ -1044,3 +1044,12 @@ body.guide-on { overflow: hidden; }
 .so-count { font-size: .85rem; color: var(--ink-2); }
 .so-trace-all { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .3rem; }
 @media (max-width: 560px) { .so-stage { grid-template-columns: 1fr; } .so-svg { max-width: 220px; } }
+
+.so-tile.has-variants { position: relative; }
+.so-tile.has-variants::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.so-tile.has-variants[aria-pressed="true"]::after { background: #fff; }
+.so-variants { display: flex; flex-wrap: wrap; gap: .35rem; }
+.so-variants:empty, .so-note:empty { display: none; }
+.so-var { padding: .3rem .75rem; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; cursor: pointer; font-size: .8rem; font-weight: 600; color: var(--ink-2); }
+.so-var[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+.so-note { font-size: .85rem; color: var(--ink-2); max-width: 28rem; }

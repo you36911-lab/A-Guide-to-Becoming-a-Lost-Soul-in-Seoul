@@ -827,6 +827,26 @@
     }
     return [];
   }
+  // Letters with more than one common way to write them. The first entry is the default shown above.
+  const VARIANTS = {
+    "ㅈ": [{ label: "Handwriting", note: "A 7-like stroke, then one stroke out to the right. 2 strokes.", strokes: () => BASE["ㅈ"] },
+           { label: "Print style", note: "A flat top, then ㅅ underneath. 3 strokes.", strokes: () => [H(24, 76, 24), [[50, 24], [26, 80]], [[50, 48], [78, 80]]] }],
+    "ㅊ": [{ label: "Tick on top", note: "A short vertical tick, then ㅈ. 3 strokes.", strokes: () => BASE["ㅊ"] },
+           { label: "Dash on top", note: "A short flat dash, then ㅈ. 3 strokes.", strokes: () => [H(40, 60, 14), [[24, 30], [74, 30], [28, 84]], [[51, 56], [78, 84]]] },
+           { label: "Print style", note: "A tick on top, then the print-style ㅈ. 4 strokes.", strokes: () => [V(50, 6, 18), H(24, 76, 30), [[50, 30], [26, 84]], [[50, 54], [78, 84]]] }],
+    "ㅎ": [{ label: "Tick on top", note: "A short vertical tick, a line, then the circle. 3 strokes.", strokes: () => BASE["ㅎ"] },
+           { label: "Dash on top", note: "A short flat dash, a line, then the circle. 3 strokes.", strokes: () => [H(40, 60, 14), H(26, 74, 30), ring(50, 62, 18)] }],
+    "ㄹ": [{ label: "Standard", note: "Three strokes: ㄱ, a line, then ㄴ.", strokes: () => BASE["ㄹ"] },
+           { label: "Quick handwriting", note: "One continuous stroke, common when writing fast.", strokes: () => [[[24, 20], [76, 20], [76, 48], [24, 48], [24, 78], [80, 78]]] }],
+    "ㅂ": [{ label: "Standard", note: "Two verticals, the middle line, then the bottom. 4 strokes.", strokes: () => BASE["ㅂ"] },
+           { label: "Note-shaped", note: "Quick handwriting: ㅣ first, then the rest in one looping stroke, so ㅂ looks a little like a music note. 2 strokes.",
+             strokes: () => {
+               // down the right side, then a rounded loop like a note head, finishing back at the right
+               const loop = Array.from({ length: 19 }, (_, k) => { const t = (k / 18) * (Math.PI * 1.45); return [51 + 19 * Math.cos(t), 62 + 17 * Math.sin(t)]; });
+               return [V(30, 18, 80), [[70, 18], [70, 62], ...loop, [70, 48]]];
+             } }],
+    "ㅇ": [{ label: "Handwriting", note: "One stroke from the top, counterclockwise. Some printed fonts add a small tip on top; you don't need it by hand.", strokes: () => BASE["ㅇ"] }]
+  };
   const pathD = pts => pts.map((p, k) => (k ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
 
   /* An arrow that runs alongside a stroke, following its straight lines and curves */
@@ -882,9 +902,9 @@
   }
 
   function strokeOrderHTML() {
-    const tile = j => `<button type="button" class="so-tile" data-j="${j}" aria-pressed="false"><span lang="ko">${j}</span></button>`;
+    const tile = j => `<button type="button" class="so-tile${VARIANTS[j] && VARIANTS[j].length > 1 ? " has-variants" : ""}" data-j="${j}" aria-pressed="false"${VARIANTS[j] && VARIANTS[j].length > 1 ? ` aria-label="${j}, more than one way to write it"` : ""}><span lang="ko">${j}</span></button>`;
     return `<figure class="so" aria-label="Stroke order for every letter">
-      <p class="so-instr"><strong>Pick a letter, then press ▶ to watch it written stroke by stroke.</strong> Then trace it in the boxes below.</p>
+      <p class="so-instr"><strong>Pick a letter, then press ▶ to watch it written stroke by stroke.</strong> Then trace it in the boxes below. Letters marked with a dot can be written in more than one way, and every way shown is correct.</p>
       <div class="so-groups">
         <div><p class="hc-h">Consonants</p><div class="so-grid">${CONS.concat(CONS2).map(tile).join("")}</div></div>
         <div><p class="hc-h">Vowels</p><div class="so-grid">${VOWS.concat(VOWS2).map(tile).join("")}</div></div>
@@ -894,6 +914,8 @@
         <div class="so-side">
           <p class="so-letter" lang="ko"></p>
           <p class="so-count"></p>
+          <div class="so-variants" role="group" aria-label="Ways to write this letter"></div>
+          <p class="so-note"></p>
           <button type="button" class="btn btn-primary so-play">▶ Play stroke order</button>
           <div class="so-trace-all"><button type="button" class="btn btn-small btn-ghost" data-trace="cons">Trace all consonants</button><button type="button" class="btn btn-small btn-ghost" data-trace="vows">Trace all vowels</button></div>
         </div>
@@ -917,10 +939,15 @@
     const fig = root.querySelector(".so"); if (!fig) return;
     const svg = fig.querySelector(".so-svg"), ghost = fig.querySelector(":scope > .hand .hand-ghost-in");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let current = "ㄱ", timer = null;
+    let current = "ㄱ", variant = 0, timer = null;
     const render = (animate) => {
       clearTimeout(timer);
-      const strokes = strokesFor(current);
+      const vs = VARIANTS[current];
+      const strokes = vs ? vs[Math.min(variant, vs.length - 1)].strokes() : strokesFor(current);
+      const vbox = fig.querySelector(".so-variants");
+      vbox.innerHTML = vs && vs.length > 1 ? vs.map((v, k) => `<button type="button" class="so-var" data-v="${k}" aria-pressed="${k === variant}">${v.label}</button>`).join("") : "";
+      vbox.querySelectorAll(".so-var").forEach(b => b.addEventListener("click", () => { variant = Number(b.dataset.v); render(true); }));
+      fig.querySelector(".so-note").textContent = vs ? vs[Math.min(variant, vs.length - 1)].note : "";
       svg.innerHTML = `<rect x="1" y="1" width="98" height="98" rx="4" class="so-box"/><path d="M50 4 V96 M4 50 H96" class="so-guide"/>` +
         strokes.map(s => `<path d="${pathD(s)}" class="so-ghost"/>`).join("") +
         strokes.map((s, k) => `<path d="${pathD(s)}" class="so-ink" data-k="${k}"/>`).join("") +
@@ -944,7 +971,7 @@
       timer = setTimeout(next, 200);
     };
     const pick = j => {
-      current = j;
+      current = j; variant = 0;
       fig.querySelectorAll(".so-tile").forEach(t => t.setAttribute("aria-pressed", String(t.dataset.j === j)));
       ghost.value = j; ghost.dispatchEvent(new Event("input"));
       render(true);
@@ -1061,10 +1088,10 @@
         ${l.table ? `<div class="table-wrap lesson-table"><table class="deep-table"><thead><tr>${l.table.head.map(x => `<th scope="col">${esc(x)}</th>`).join("")}</tr></thead><tbody>${l.table.rows.map(row => `<tr>${row.map((c, ci) => ci === 0 ? `<th scope="row">${esc(c)}</th>` : `<td lang="ko">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
       </section>
 
-      <section class="lesson-block b-examples">
+${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
         <div class="practice-head"><h3 class="block-h">${mission ? "Useful expressions" : "Examples"}</h3><button type="button" class="pron-toggle" aria-pressed="${state.showPron ? "true" : "false"}">Pronunciation</button></div>
         <div class="examples${state.showPron ? " show-pron" : ""}" lang="ko">${l.ex.map(x => exampleHTML(x)).join("")}</div>
-      </section>
+      </section>` : ""}
 
       ${mission ? `
       <section class="lesson-block b-turn">

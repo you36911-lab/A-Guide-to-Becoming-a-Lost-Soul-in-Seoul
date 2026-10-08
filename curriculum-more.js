@@ -13,7 +13,7 @@ const MORE_LESSONS = {
       p: ["Hangul has 14 basic consonants and 10 basic vowels.",
           "Five double consonants (ㄲ ㄸ ㅃ ㅆ ㅉ) and eleven compound vowels are built from the basic letters.",
           "Every syllable is a block made from these letters: a consonant, a vowel, and sometimes a final consonant."],
-      ex: ["ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ", "ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ"], noPractice: true,
+      ex: [], noPractice: true,
       q: [] }
   ],
 

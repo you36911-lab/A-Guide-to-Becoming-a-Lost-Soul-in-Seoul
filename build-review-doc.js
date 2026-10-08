@@ -152,7 +152,7 @@ UNITS.forEach((u, i) => {
     l.p.forEach(p => bullet(p.replace(/==/g, "")));
     if (l.table) { label("TABLE"); table(l.table.head, l.table.rows); }
     if (l.figure) para(`[Interactive figure: ${l.figure}${l.ghost ? `, trace text “${l.ghost}”` : ""}]`);
-    label(l.kind === "mission" ? "USEFUL EXPRESSIONS" : "EXAMPLES");
+    if (l.ex.length) label(l.kind === "mission" ? "USEFUL EXPRESSIONS" : "EXAMPLES");
     l.ex.forEach(x => Array.isArray(x) ? bullet([T(x[0]), T(`  — ${x[1]}`, { color: "6E6560", italics: true })]) : bullet(x));
     if (l.kind !== "mission") renderPractice(key);
   });

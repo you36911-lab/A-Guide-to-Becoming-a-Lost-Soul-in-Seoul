@@ -146,7 +146,13 @@ const LESSON_EDITS = {
       p: ["Strokes generally go from top to bottom and from left to right. Horizontal strokes go from left to right; vertical strokes usually go from top to bottom.",
           "ㅇ is written in one stroke: start at the top and move counterclockwise around the circle.",
           "Inside a block, write in order: first the consonant, then the vowel, then the final consonant at the bottom.",
-          "Some letters change shape when combined into a block: before ㅏ, ㄱ leans and sweeps down (가); above ㅗ, it sits flat (고)."]
+          "Some letters change shape when combined into a block: before ㅏ, ㄱ leans and sweeps down (가); above ㅗ, it sits flat (고).",
+          "Some letters have more than one common handwritten form: ㅈ, ㅊ, ㅎ, ㄹ and ㅂ can each be written in a couple of ways, and all of them are correct."],
+      q: [["Which way do strokes usually go?", ["bottom to top, right to left", "top to bottom, left to right", "in any order", "right to left only"], 1, "Top to bottom, left to right."],
+          ["How do you draw ㅇ?", ["two half circles", "one stroke from the top, counterclockwise", "one stroke from the bottom, clockwise", "a square"], 1, "One stroke, starting at the top."],
+          ["In which order do you write 한?", ["ㄴ, ㅏ, ㅎ", "ㅎ, ㅏ, ㄴ", "ㅏ, ㅎ, ㄴ", "ㅎ, ㄴ, ㅏ"], 1, "First consonant, vowel, then the final."],
+          ["In 가, compared with 고, the ㄱ…", ["looks exactly the same", "leans and sweeps down", "is written in two strokes", "is written last"], 1, "Next to a vertical vowel, ㄱ leans."],
+          ["The top of ㅎ can be written as…", ["only a short vertical tick", "only a short flat dash", "either a short tick or a short dash", "a small circle"], 2, "Both forms are common and correct."]]
     },
     "Typing Hangul": {
       k: "",
