@@ -13,10 +13,8 @@ const MORE_LESSONS = {
       p: ["Hangul has 14 basic consonants and 10 basic vowels.",
           "Five double consonants (ㄲ ㄸ ㅃ ㅆ ㅉ) and eleven compound vowels are built from the basic letters.",
           "Every syllable is a block made from these letters: a consonant, a vowel, and sometimes a final consonant."],
-      ex: ["ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ", "ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ"],
-      q: [["How many basic consonants does Hangul have?", ["10", "14", "19", "24"], 1, "14 basic consonants; with the five double ones, 19."],
-          ["Which of these is a double consonant?", ["ㅌ", "ㄸ", "ㄹ", "ㅎ"], 1, "ㄲ ㄸ ㅃ ㅆ ㅉ are the double consonants."],
-          ["Every syllable block contains at least…", ["two consonants", "a consonant and a vowel", "a vowel and a final consonant", "three letters"], 1, "A consonant (ㅇ if silent) and a vowel; the final consonant is optional."]] }
+      ex: ["ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ", "ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ"], noPractice: true,
+      q: [] }
   ],
 
   /* ── A0 서촌 ── */

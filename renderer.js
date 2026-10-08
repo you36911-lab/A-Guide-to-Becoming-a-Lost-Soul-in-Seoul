@@ -829,6 +829,58 @@
   }
   const pathD = pts => pts.map((p, k) => (k ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
 
+  /* An arrow that runs alongside a stroke, following its straight lines and curves */
+  function offsetLine(pts, d) {
+    const n = pts.length, out = [];
+    const norm = (ax, ay) => { const L = Math.hypot(ax, ay) || 1; return [ax / L, ay / L]; };
+    const segN = i => { const [dx, dy] = norm(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); return [-dy, dx]; };
+    for (let i = 0; i < n; i++) {
+      let nx, ny;
+      if (i === 0) [nx, ny] = segN(0);
+      else if (i === n - 1) [nx, ny] = segN(n - 2);
+      else {
+        const a = segN(i - 1), b2 = segN(i);
+        [nx, ny] = norm(a[0] + b2[0], a[1] + b2[1]);
+        const cos = nx * a[0] + ny * a[1];
+        const m = 1 / Math.max(cos, .5); nx *= m; ny *= m;
+      }
+      out.push([pts[i][0] + nx * d, pts[i][1] + ny * d]);
+    }
+    return out;
+  }
+  function trimLine(pts, t0, t1) {
+    // shorten a polyline by t0 at the start and t1 at the end
+    const p = pts.map(q => q.slice());
+    const cut = (arr, t) => { let left = t; while (arr.length > 1 && left > 0) { const [a, b] = [arr[0], arr[1]]; const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > left) { a[0] += (b[0] - a[0]) * left / L; a[1] += (b[1] - a[1]) * left / L; break; } arr.shift(); left -= L; } };
+    cut(p, t0); p.reverse(); cut(p, t1); p.reverse();
+    return p;
+  }
+  function strokeArrow(s, k, all) {
+    const closed = Math.hypot(s[0][0] - s[s.length - 1][0], s[0][1] - s[s.length - 1][1]) < 2;
+    const near = (x, y) => all.some((o, oi) => oi !== k && o.some((q, qi) => qi < o.length - 1 && segDist(x, y, q, o[qi + 1]) < 6));
+    const score = line => line.filter(([x, y]) => x < 4 || x > 96 || y < 4 || y > 96 || near(x, y)).length;
+    let line;
+    if (closed) {
+      const cx = s.reduce((a, p) => a + p[0], 0) / s.length, cy = s.reduce((a, p) => a + p[1], 0) / s.length;
+      line = s.map(([x, y]) => { const L = Math.hypot(x - cx, y - cy) || 1; return [x - (x - cx) / L * 8, y - (y - cy) / L * 8]; }).slice(0, -6);
+    } else {
+      const sample = l => l.length > 2 ? l : [l[0], [(l[0][0] + l[1][0]) / 2, (l[0][1] + l[1][1]) / 2], l[1]];
+      const A = offsetLine(s, 8.5), B = offsetLine(s, -8.5);
+      line = score(sample(A)) <= score(sample(B)) ? A : B;
+      line = trimLine(line, 2, 3);
+    }
+    const e = line[line.length - 1], p = line[line.length - 2] || line[0];
+    let dx = e[0] - p[0], dy = e[1] - p[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+    const head = `M${(e[0] - dx * 4 - dy * 3).toFixed(1)} ${(e[1] - dy * 4 + dx * 3).toFixed(1)} L${e[0].toFixed(1)} ${e[1].toFixed(1)} L${(e[0] - dx * 4 + dy * 3).toFixed(1)} ${(e[1] - dy * 4 - dx * 3).toFixed(1)}`;
+    const st = line[0];
+    return `<g class="so-num" data-k="${k}"><path d="${pathD(line)}" class="so-arrow"/><path d="${head}" class="so-arrow"/><circle cx="${st[0].toFixed(1)}" cy="${st[1].toFixed(1)}" r="4.2" class="so-badge"/><text x="${st[0].toFixed(1)}" y="${(st[1] + 2).toFixed(1)}" class="so-n">${k + 1}</text></g>`;
+  }
+  function segDist(x, y, a, b) {
+    const vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy || 1;
+    const t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / L2));
+    return Math.hypot(x - (a[0] + vx * t), y - (a[1] + vy * t));
+  }
+
   function strokeOrderHTML() {
     const tile = j => `<button type="button" class="so-tile" data-j="${j}" aria-pressed="false"><span lang="ko">${j}</span></button>`;
     return `<figure class="so" aria-label="Stroke order for every letter">
@@ -847,11 +899,23 @@
         </div>
       </div>
       ${handPadHTML("ㄱ")}
+      <div class="so-name">
+        <h3 class="block-h">Your name, again</h3>
+        <p class="so-instr">In Gwanghwamun you wrote your name before you knew the stroke order. Write it again now, stroke by stroke, top to bottom and left to right.</p>
+        ${handPadHTML(missionName())}
+      </div>
     </figure>`;
+  }
+  // the name typed in the Gwanghwamun mission, if there is one
+  function missionName() {
+    const i = UNITS.findIndex(u => u.id === "gwanghwamun"); if (i < 0) return "";
+    const j = UNITS[i].lessons.findIndex(l => l.kind === "mission"); if (j < 0) return "";
+    const t = (state.drafts[lessonId(i, j)] || "").split("\n").map(x => x.trim()).find(x => /[가-힣]/.test(x)) || "";
+    return t.replace(/[^가-힣 ]/g, "").trim().slice(0, 12);
   }
   function wireStrokeOrder(root) {
     const fig = root.querySelector(".so"); if (!fig) return;
-    const svg = fig.querySelector(".so-svg"), ghost = fig.querySelector(".hand-ghost-in");
+    const svg = fig.querySelector(".so-svg"), ghost = fig.querySelector(":scope > .hand .hand-ghost-in");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     let current = "ㄱ", timer = null;
     const render = (animate) => {
@@ -860,13 +924,7 @@
       svg.innerHTML = `<rect x="1" y="1" width="98" height="98" rx="4" class="so-box"/><path d="M50 4 V96 M4 50 H96" class="so-guide"/>` +
         strokes.map(s => `<path d="${pathD(s)}" class="so-ghost"/>`).join("") +
         strokes.map((s, k) => `<path d="${pathD(s)}" class="so-ink" data-k="${k}"/>`).join("") +
-        (() => { const used = []; return strokes.map((s, k) => {
-          // keep the stroke numbers from sitting on top of each other when strokes start at the same point
-          let x = s[0][0] - 7, y = s[0][1] - 3;
-          while (used.some(([ux, uy]) => Math.abs(ux - x) < 7 && Math.abs(uy - y) < 7)) y += 8;
-          used.push([x, y]);
-          return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="so-num" data-k="${k}">${k + 1}</text>`;
-        }).join(""); })();
+        strokes.map((s, k) => strokeArrow(s, k, strokes)).join("");
       fig.querySelector(".so-letter").textContent = current;
       fig.querySelector(".so-count").textContent = `${strokes.length} ${strokes.length === 1 ? "stroke" : "strokes"}`;
       const inks = [...svg.querySelectorAll(".so-ink")], nums = [...svg.querySelectorAll(".so-num")];
@@ -896,7 +954,7 @@
     fig.querySelectorAll("[data-trace]").forEach(b => b.addEventListener("click", () => {
       ghost.value = (b.dataset.trace === "cons" ? CONS.concat(CONS2) : VOWS.concat(VOWS2)).join("");
       ghost.dispatchEvent(new Event("input"));
-      fig.querySelector(".hand").scrollIntoView({ block: "nearest", behavior: "smooth" });
+      fig.querySelector(":scope > .hand").scrollIntoView({ block: "nearest", behavior: "smooth" });
     }));
     fig.querySelector('.so-tile[data-j="ㄱ"]').setAttribute("aria-pressed", "true");
     render(false);
