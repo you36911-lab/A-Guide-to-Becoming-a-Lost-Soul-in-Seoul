@@ -839,7 +839,7 @@
     "ㄹ": [{ label: "Standard", note: "Three strokes: ㄱ, a line, then ㄴ.", strokes: () => BASE["ㄹ"] },
            { label: "Quick handwriting", note: "One continuous stroke, common when writing fast.", strokes: () => [[[24, 20], [76, 20], [76, 48], [24, 48], [24, 78], [80, 78]]] }],
     "ㅂ": [{ label: "Standard", note: "Two verticals, the middle line, then the bottom. 4 strokes.", strokes: () => BASE["ㅂ"] },
-           { label: "Note-shaped", note: "Quick handwriting: ㅣ first, then the rest in one looping stroke, so ㅂ looks a little like a music note. 2 strokes.",
+           { label: "Quick handwriting", note: "ㅣ first, then the rest in one looping stroke, which makes ㅂ look a little like a music note. 2 strokes.",
              strokes: () => {
                // down the right side, then a rounded loop like a note head, finishing back at the right
                const loop = Array.from({ length: 19 }, (_, k) => { const t = (k / 18) * (Math.PI * 1.45); return [51 + 19 * Math.cos(t), 62 + 17 * Math.sin(t)]; });
