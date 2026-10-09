@@ -127,7 +127,7 @@ const LESSON_EDITS = {
       p: ["Place: Korean consonants are made at different places in the vocal tract. These include the lips (ㅂ ㅃ ㅍ ㅁ), the alveolar ridge behind the upper teeth (ㄷ ㄸ ㅌ ㄴ ㄹ ㅅ ㅆ), the area just behind the alveolar ridge / hard palate (ㅈ ㅉ ㅊ), the soft palate (ㄱ ㄲ ㅋ ㅇ), and the glottis (ㅎ).",
           "Manner: Stops completely block the airflow, then release it (ㄱ ㄷ ㅂ). Affricates begin like stops, then release through a narrow opening (ㅈ ㅉ ㅊ). Fricatives let air pass through a narrow opening, creating friction (ㅅ ㅆ ㅎ). Nasals let air flow through the nose (ㄴ ㅁ ㅇ). ㄹ is a liquid consonant, made with a quick movement of the tongue.",
           "Voicing: Nasals and ㄹ are normally voiced. Other Korean consonants are generally voiceless at the beginning of a word."],
-      table: { head: ["", "Lips", "(Alveolar) Ridge", "Alveolo-palatal / Hard palate", "Soft palate", "Throat"], rows: [
+      table: { head: ["", "Lips", "(Alveolar) Ridge", "Alveolo-palatal / Hard palate", "Soft palate", "Glottis / Throat"], rows: [
         ["Stops", "ㅂ ㅃ ㅍ", "ㄷ ㄸ ㅌ", "", "ㄱ ㄲ ㅋ", ""],
         ["Affricates", "", "", "ㅈ ㅉ ㅊ", "", ""],
         ["Fricatives", "", "ㅅ ㅆ", "", "", "ㅎ"],
@@ -279,10 +279,16 @@ const TERM_PARENS = [
   [/(\d+)\s?품사/g, "$1 parts of speech"]
 ];
 
+const UNIT_EDITS = {
+  seochon: { fact: f => f.replace(/준수방/g, "Junsu-bang").replace(/통인시장/g, "Tongin Market").replace(/\s*\(\s*\)/g, "") }
+};
+
 (function applyEdits() {
   const clean = s => typeof s === "string" ? TERM_PARENS.reduce((t, [re, to]) => t.replace(re, to), s) : s;
   UNITS.forEach(u => {
     u.titleKo = "";
+    const ue = UNIT_EDITS[u.id];
+    if (ue) Object.entries(ue).forEach(([f, fn]) => { if (typeof fn === "function") u[f] = fn(u[f] || ""); else u[f] = fn; });
     const edits = LESSON_EDITS[u.id] || {};
     u.lessons.forEach((l, j) => {
       const e = edits[l.t];

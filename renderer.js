@@ -814,8 +814,34 @@
   const small = j => shift(BASE[j], 0, .5);           // left half
   const right = j => shift(BASE[j], 50, .5);          // right half
   const leftLow = j => BASE[j].map(s => s.map(([x, y]) => [x * .6 + 2, y * .55 + 40])); // ㅗ/ㅜ/ㅡ part of a compound
+  // squeeze a letter's strokes into the horizontal range x0..x1 (keeps the vertical shape)
+  const fitX = (strokes, x0, x1) => {
+    const xs = strokes.flat().map(p => p[0]), lo = Math.min(...xs), hi = Math.max(...xs), k = (x1 - x0) / ((hi - lo) || 1);
+    return strokes.map(s => s.map(([x, y]) => [x0 + (x - lo) * k, y]));
+  };
+  // the short stroke of ㅜ in ㅝ ㅞ ㅟ: a little longer, curving slightly to the left at the bottom
+  const hook = (x, y0) => [[x, y0], [x, y0 + 18], [x - 1.5, y0 + 31], [x - 4, y0 + 39], [x - 7, y0 + 44]];
+  const MORE = {
+    "ㄲ": () => [...fitX(BASE["ㄱ"], 12, 45), ...fitX(BASE["ㄱ"], 55, 88)],
+    "ㄸ": () => [...fitX(BASE["ㄷ"], 10, 45), ...fitX(BASE["ㄷ"], 55, 90)],
+    "ㅃ": () => [...fitX(BASE["ㅂ"], 12, 44), ...fitX(BASE["ㅂ"], 56, 88)],
+    "ㅆ": () => [...fitX(BASE["ㅅ"], 10, 50), ...fitX(BASE["ㅅ"], 50, 90)],
+    "ㅉ": () => [...fitX(BASE["ㅈ"], 10, 49), ...fitX(BASE["ㅈ"], 51, 90)],
+    "ㅐ": () => [V(36, 10, 90), H(36, 54, 50), V(62, 10, 90)],
+    "ㅒ": () => [V(34, 10, 90), H(34, 52, 38), H(34, 52, 62), V(62, 10, 90)],
+    "ㅔ": () => [H(24, 44, 50), V(44, 10, 90), V(66, 10, 90)],
+    "ㅖ": () => [H(22, 42, 38), H(22, 42, 62), V(44, 10, 90), V(66, 10, 90)],
+    "ㅘ": () => [V(32, 46, 66), H(8, 62, 66), V(64, 10, 90), H(64, 84, 50)],
+    "ㅙ": () => [V(28, 48, 66), H(6, 52, 66), V(54, 10, 90), H(54, 68, 50), V(78, 10, 90)],
+    "ㅚ": () => [V(34, 46, 66), H(10, 64, 66), V(68, 10, 90)],
+    "ㅝ": () => [H(8, 56, 40), hook(32, 40), H(52, 68, 52), V(68, 10, 90)],
+    "ㅞ": () => [H(6, 48, 40), hook(27, 40), H(44, 58, 52), V(58, 10, 90), V(80, 10, 90)],
+    "ㅟ": () => [H(8, 62, 40), hook(35, 40), V(70, 10, 90)],
+    "ㅢ": () => [H(8, 62, 58), V(70, 10, 90)]
+  };
   function strokesFor(j) {
     if (BASE[j]) return BASE[j];
+    if (MORE[j]) return MORE[j]();
     const dbl = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" }[j];
     if (dbl) return [...small(dbl), ...right(dbl)];
     const comp = { "ㅐ": [["ㅏ", 0, .62], ["ㅣ", 34, 1]], "ㅒ": [["ㅑ", 0, .62], ["ㅣ", 34, 1]], "ㅔ": [["ㅓ", 0, .7], ["ㅣ", 30, 1]], "ㅖ": [["ㅕ", 0, .7], ["ㅣ", 30, 1]] }[j];
@@ -875,7 +901,7 @@
     cut(p, t0); p.reverse(); cut(p, t1); p.reverse();
     return p;
   }
-  function strokeArrow(s, k, all) {
+  function strokeArrow(s, k, all, badges = []) {
     const closed = Math.hypot(s[0][0] - s[s.length - 1][0], s[0][1] - s[s.length - 1][1]) < 2;
     const near = (x, y) => all.some((o, oi) => oi !== k && o.some((q, qi) => qi < o.length - 1 && segDist(x, y, q, o[qi + 1]) < 6));
     const score = line => line.filter(([x, y]) => x < 4 || x > 96 || y < 4 || y > 96 || near(x, y)).length;
@@ -892,7 +918,17 @@
     const e = line[line.length - 1], p = line[line.length - 2] || line[0];
     let dx = e[0] - p[0], dy = e[1] - p[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
     const head = `M${(e[0] - dx * 4 - dy * 3).toFixed(1)} ${(e[1] - dy * 4 + dx * 3).toFixed(1)} L${e[0].toFixed(1)} ${e[1].toFixed(1)} L${(e[0] - dx * 4 + dy * 3).toFixed(1)} ${(e[1] - dy * 4 - dx * 3).toFixed(1)}`;
-    const st = line[0];
+    // place the number at the arrow's tail; if another number is already there, step back along the arrow, then sideways
+    let st = line[0].slice();
+    const s1 = line[1] || line[0];
+    let bx = st[0] - s1[0], by = st[1] - s1[1]; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl;
+    const clash = ([x, y]) => badges.some(([ux, uy]) => Math.hypot(ux - x, uy - y) < 10);
+    for (let n = 1; clash(st) && n < 8; n++) {
+      const side = n % 2 ? 1 : -1, step = Math.ceil(n / 2) * 7;
+      st = [line[0][0] + bx * step + (n > 2 ? -by * side * 6 : 0), line[0][1] + by * step + (n > 2 ? bx * side * 6 : 0)];
+    }
+    st = [Math.min(Math.max(st[0], 5), 95), Math.min(Math.max(st[1], 5), 95)];
+    badges.push(st);
     return `<g class="so-num" data-k="${k}"><path d="${pathD(line)}" class="so-arrow"/><path d="${head}" class="so-arrow"/><circle cx="${st[0].toFixed(1)}" cy="${st[1].toFixed(1)}" r="4.2" class="so-badge"/><text x="${st[0].toFixed(1)}" y="${(st[1] + 2).toFixed(1)}" class="so-n">${k + 1}</text></g>`;
   }
   function segDist(x, y, a, b) {
@@ -951,22 +987,27 @@
       svg.innerHTML = `<rect x="1" y="1" width="98" height="98" rx="4" class="so-box"/><path d="M50 4 V96 M4 50 H96" class="so-guide"/>` +
         strokes.map(s => `<path d="${pathD(s)}" class="so-ghost"/>`).join("") +
         strokes.map((s, k) => `<path d="${pathD(s)}" class="so-ink" data-k="${k}"/>`).join("") +
-        strokes.map((s, k) => strokeArrow(s, k, strokes)).join("");
+        (() => { const badges = []; return strokes.map((s, k) => strokeArrow(s, k, strokes, badges)).join(""); })();
       fig.querySelector(".so-letter").textContent = current;
       fig.querySelector(".so-count").textContent = `${strokes.length} ${strokes.length === 1 ? "stroke" : "strokes"}`;
       const inks = [...svg.querySelectorAll(".so-ink")], nums = [...svg.querySelectorAll(".so-num")];
-      inks.forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = animate && !reduce ? L : 0; });
-      nums.forEach(n => n.style.opacity = animate && !reduce ? 0 : 1);
-      if (!animate || reduce) return;
+      const lens = inks.map(p => { try { return p.getTotalLength(); } catch { return 150; } });
+      inks.forEach((p, i) => { p.style.strokeDasharray = lens[i]; p.style.strokeDashoffset = animate ? lens[i] : 0; });
+      nums.forEach(n => n.style.opacity = animate ? 0 : 1);
+      if (!animate) return;
       let k = 0;
       const next = () => {
         if (k >= inks.length) return;
-        const p = inks[k], L = p.getTotalLength(), dur = Math.max(350, L * 9);
+        const p = inks[k], L = lens[k];
         nums[k].style.opacity = 1;
-        p.style.transition = `stroke-dashoffset ${dur}ms ease-in-out`;
-        requestAnimationFrame(() => { p.style.strokeDashoffset = 0; });
+        // with reduced motion each stroke simply appears in turn; otherwise it is drawn along its path
+        const dur = reduce ? 0 : Math.max(380, L * 9);
+        if (!reduce && p.animate) {
+          p.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: dur, easing: "ease-in-out", fill: "forwards" });
+        }
+        setTimeout(() => { p.style.strokeDashoffset = 0; }, dur);
         k++;
-        timer = setTimeout(next, dur + 220);
+        timer = setTimeout(next, dur + (reduce ? 650 : 220));
       };
       timer = setTimeout(next, 200);
     };
@@ -993,7 +1034,7 @@
     { id: "ridge",  ko: "Alveolar ridge", term: "alveolar", en: "The ridge just behind the upper teeth", cons: "ㄷ ㄸ ㅌ ㅅ ㅆ ㄴ ㄹ", x: 112, y: 182, lx: 4, ly: 122, ex: 70, ey: 126 },
     { id: "hard",   ko: "Hard palate", term: "alveolo-palatal", en: "Just behind the ridge, toward the hard palate", cons: "ㅈ ㅉ ㅊ", x: 166, y: 166, lx: 128, ly: 88, ex: 160, ey: 94 },
     { id: "soft",   ko: "Soft palate", term: "velar", en: "The soft back part of the roof of the mouth", cons: "ㄱ ㄲ ㅋ ㅇ", x: 240, y: 174, lx: 262, ly: 108, ex: 290, ey: 114 },
-    { id: "glottis",ko: "Glottis", term: "glottal", en: "Between the vocal folds", cons: "ㅎ", x: 265, y: 312, lx: 300, ly: 344, ex: 318, ey: 334 }
+    { id: "glottis",ko: "Glottis / Throat", term: "glottal", en: "Between the vocal folds", cons: "ㅎ", x: 265, y: 312, lx: 272, ly: 356, ex: 290, ey: 346 }
   ];
   function vocalTractHTML() {
     return `
