@@ -1,7 +1,7 @@
 /* Service worker: makes the app installable and usable offline.
    Pages and app files are fetched fresh when online (so updates arrive right away)
    and served from the cache when offline. Bump VERSION when you change files. */
-const VERSION = "lss-v47";
+const VERSION = "lss-v48";
 const CORE = [
   "./", "./index.html", "./styles.css", "./renderer.js", "./engine.js", "./curriculum.js",
   "./practice.js", "./curriculum-more.js", "./curriculum-edits.js", "./dictionary.js", "./hanja.js", "./deepdives.js", "./readings.js", "./voices.js",

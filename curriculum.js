@@ -149,10 +149,27 @@ const UNITS = [
         s: "One verb pair covers existence, location, and possession.",
         p: ["N이/가 있어요: there is / I have.", "N에 있어요: something is located somewhere.", "없어요 is the opposite."],
         ex: ["시간이 있어요.", "가방이 의자에 있어요.", "돈이 없어요."] },
-      { kind: "mission", t: "Introduce yourself", k: "자기소개 · 인사 역할극",
-        s: "Say your name, where you're from, and what you do. Then act out a first meeting with greetings.",
-        p: ["Greeting, name, country, job, closing.", "Practice both 해요체 and the formal 합니다체 version.", "Role-play: meeting a classmate, then a teacher."],
-        ex: ["안녕하세요. 저는 안나예요.", "독일에서 왔어요.", "저는 대학생이에요.", "만나서 반가워요."] }
+      // write: English prompts, typed in Korean. a = accepted answers; (x|y|) = x, y or nothing
+      { kind: "mission", t: "Ask the questions", k: "",
+        s: "Read each question in English, write it in Korean, then check. There is often more than one right way to ask, and any natural, correct version counts.",
+        p: ["Put the question word where the answer would go.", "Keep the verb at the end.", "Say each question out loud once you've got it right."],
+        ex: [],
+        write: [
+          { en: "What's your name?", model: "이름이 뭐예요?",
+            a: ["(이름이|이름은|이름|성함이|성함은) (뭐예요|무엇이에요|무엇입니까|뭡니까|어떻게 되세요|어떻게 돼요|어떻게 되십니까|어떻게 됩니까)"] },
+          { en: "Where are you going?", model: "어디에 가요?",
+            a: ["(지금|) (어디에|어디|어디로) (가요|가세요|가나요|가십니까|갑니까)"] },
+          { en: "How many people are going?", model: "몇 명이 가요?",
+            a: ["몇 (명이|명|명이서|분이|분) (가요|가세요|가나요|가십니까|갑니까)"] },
+          { en: "How much is this?", model: "이거 얼마예요?",
+            a: ["(이거|이건|이게|이것|이것은|이것이|) (얼마예요|얼마입니까|얼마죠|얼마나 해요)"] },
+          { en: "Why are you going home?", model: "왜 집에 가요?",
+            a: ["왜 (집에|집으로) (가요|가세요|가나요|가십니까|갑니까)", "(집에|집으로) 왜 (가요|가세요|가나요|가십니까|갑니까)"] },
+          { en: "How do you get there?", model: "거기에 어떻게 가요?",
+            a: ["(거기에|거기|거기로|그곳에|그곳으로|그곳|) 어떻게 (가요|가세요|가나요|가십니까|갑니까|가야 해요|가야 돼요)", "어떻게 (거기에|거기|거기로|그곳에|그곳으로) (가요|가세요|가나요|가십니까|갑니까|가야 해요|가야 돼요)"] },
+          { en: "Who came?", model: "누가 왔어요?",
+            a: ["누가 (왔어요|오셨어요|왔나요|오셨나요|왔습니까|오셨습니까|왔죠|온 거예요)"] }
+        ] }
     ]
   },
   {
@@ -178,6 +195,11 @@ const UNITS = [
         s: "안 means you don't or won't; 못 means you can't.",
         p: ["안 + verb: choice. 못 + verb: inability.", "With 하다 verbs, put 안/못 before 하다: 공부 안 해요.", "Longer forms come later: -지 않다, -지 못하다."],
         ex: ["커피를 안 마셔요.", "매운 음식을 못 먹어요.", "오늘은 운동 안 했어요."] },
+      // moved here from Sinchon: it needs the verb basics above (왔어요, 반가워요)
+      { kind: "mission", t: "Introduce yourself", k: "자기소개 · 인사 역할극",
+        s: "Say your name, where you're from, and what you do. Then act out a first meeting with greetings.",
+        p: ["Greeting, name, country, job, closing.", "Practice both 해요체 and the formal 합니다체 version.", "Role-play: meeting a classmate, then a teacher."],
+        ex: ["안녕하세요. 저는 안나예요.", "독일에서 왔어요.", "저는 대학생이에요.", "만나서 반가워요."] },
       { kind: "mission", t: "Write a short diary", k: "짧은 일기 쓰기",
         s: "Write five sentences about your day in the past tense. Korean schoolchildren start with exactly this.",
         p: ["When, where, what you did, how it felt.", "Use -았/었- in every sentence.", "Add one negative with 안 or 못."],

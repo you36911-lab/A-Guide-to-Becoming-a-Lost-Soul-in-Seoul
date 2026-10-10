@@ -1,6 +1,8 @@
 /* =========================================================
    Review edits, applied on top of curriculum.js + curriculum-more.js
    1) Sooya's review of Gwanghwamun and Seochon (Oct 2026)
+      and of Hongdae and Sinchon (Oct 2026). In Hongdae each lesson's
+      subtitle names its kind of sound change from the overview lesson.
    2) No Korean terminology: Korean grammar *names* are removed or put
       into English; Korean *forms* learners must learn (은/는, -아요) stay.
    Lessons are matched by unit id and their title before this file runs.
@@ -180,19 +182,142 @@ const LESSON_EDITS = {
     }
   },
 
-  /* term-heavy lessons, put into English */
   hongdae: {
     "Four ways sounds change": {
       k: "",
-      p: ["Replacement: one sound turns into another, as in nasalization, ㄹ-assimilation, palatalization, tensing and the seven final sounds.",
-          "Deletion: a sound disappears. Final ㅎ before a vowel, one consonant of a double final, ㄹ and ㅡ in verb endings.",
-          "Addition: a sound appears. An extra ㄴ in 솜이불, and a glide in 되어 [되여].",
-          "Contraction: two sounds become one. ㄱ + ㅎ → ㅋ in 축하, and ㅗ + ㅏ → ㅘ in 보아 → 봐."],
-      ex: [["국물 [궁물]", "replacement"], ["좋아요 [조아요]", "deletion"], ["솜이불 [솜니불]", "addition"], ["축하 [추카]", "contraction"]],
-      q: [["국물 → [궁물] is which kind of change?", ["replacement", "deletion", "addition", "contraction"], 0, "ㄱ is replaced by ㅇ."],
-          ["좋아요 → [조아요] is…", ["replacement", "deletion", "addition", "contraction"], 1, "ㅎ disappears."],
-          ["솜이불 → [솜니불] is…", ["replacement", "deletion", "addition", "contraction"], 2, "A ㄴ appears."],
-          ["축하 → [추카] is…", ["replacement", "deletion", "addition", "contraction"], 3, "ㄱ and ㅎ merge into ㅋ."]]
+      s: "The sound changes you'll learn in Hongdae can be grouped into four types. Each lesson after this one names its type.",
+      p: ["Substitution: One sound changes into another. Examples include nasalization, ㄹ-assimilation, palatalization, tensing, and the seven final sounds.",
+          "Deletion: A sound disappears. For example, final ㅎ can disappear before a vowel.",
+          "Addition: A sound appears. For example, an extra ㄴ can appear in 솜이불 [솜니불].",
+          "Contraction: Two sounds combine into one. For example, ㅗ + ㅏ combine in 보아 → 봐."],
+      ex: [["국물 [궁물]", "substitution"], ["좋아요 [조아요]", "deletion"], ["솜이불 [솜니불]", "addition"], ["보아 → 봐", "contraction"]],
+      q: [["밥맛 → [밤맏] is which kind of change?", ["substitution", "deletion", "addition", "contraction"], 0, "ㅂ is replaced by ㅁ."],
+          ["놓아 → [노아] is…", ["substitution", "deletion", "addition", "contraction"], 1, "ㅎ disappears."],
+          ["색연필 → [생년필] is…", ["substitution", "deletion", "addition", "contraction"], 2, "A ㄴ appears (and the ㄱ before it then turns into ㅇ)."],
+          ["주어 → 줘 is…", ["substitution", "deletion", "addition", "contraction"], 3, "ㅜ and ㅓ merge into ㅝ."]]
+    },
+    "When a vowel follows a final": {
+      t: "When a vowel follows a final consonant", k: "Linking (sounds move, none change)",
+      s: "When a syllable ending in a consonant is followed by a syllable beginning with a vowel, the final consonant often moves to the next syllable's initial position.",
+      p: ["The silent ㅇ leaves an empty seat, and the final consonant moves into it.",
+          "With a double final consonant, one consonant may stay while the other moves to the next syllable.",
+          "This happens across word endings and particles, as in 옷이, 꽃을, and 앉아."]
+    },
+    "ㅅ ㅈ ㅊ ㅌ at the end": {
+      k: "Substitution",
+      s: "At the end of a syllable, ㅅ, ㅈ, ㅊ, and ㅌ are all pronounced as [ㄷ]. When a vowel follows, the final consonant links to the next syllable. Some consonants change their sound before 이.",
+      p: ["In final position, ㅅ, ㅈ, ㅊ, and ㅌ are pronounced as [ㄷ]: 옷 [옫], 낮 [낟], 꽃 [꼳], 밭 [받].",
+          "When a vowel-initial word follows, the final consonant links to its initial position: 옷 안 [오단].",
+          "ㄷ and ㅌ followed by 이 can change through palatalization, becoming [ㅈ] and [ㅊ], respectively."],
+      q: [{ drill: "pron", words: ["옷을", "밑에", "맏이", "해돋이", "꽃 아래", "끝이"] }]
+    },
+    "Turning into a puff": {
+      t: "When ㅎ changes the sound", k: "Contraction · Deletion",
+      s: "ㅎ combines with ㄱ, ㄷ, ㅂ, or ㅈ to create a more strongly aspirated sound. Before a vowel, final ㅎ is often not pronounced.",
+      p: ["ㄱ, ㄷ, ㅂ, ㅈ + ㅎ (in either order) → ㅋ, ㅌ, ㅍ, ㅊ.",
+          "Final ㅎ + vowel: ㅎ is not pronounced. 좋아요 [조아요].",
+          "ㄶ, ㅀ + vowel: only ㄴ or ㄹ is pronounced. 많이 [마니]."],
+      q: [{ drill: "pron", words: ["국화", "많다", "그렇고", "맏형", "싫어", "놓아"] }]
+    },
+    "Finals that turn nasal": {
+      t: "Final consonants that turn nasal", k: "Substitution",
+      s: "Before ㄴ or ㅁ, the final consonant sounds [ㄱ], [ㄷ], and [ㅂ] change to the nasal sounds [ㅇ], [ㄴ], and [ㅁ], respectively.",
+      p: ["[ㄱ] → [ㅇ], [ㄷ] → [ㄴ], and [ㅂ] → [ㅁ] before ㄴ or ㅁ.",
+          "This also affects ㅅ, ㅆ, ㅈ, ㅊ, ㅌ, and ㅎ when they occur as final consonants, since they are pronounced as [ㄷ] before the change.",
+          "ㄹ can change to [ㄴ] after certain consonants, as in 종로 [종노] and 심리 [심니]."],
+      q: [{ drill: "pron", words: ["한국말", "앞문", "듣는", "막내", "협력", "강릉", "입문"] }]
+    },
+    "When ㄴ becomes ㄹ": {
+      k: "Substitution",
+      s: "When ㄴ and ㄹ occur next to each other, they usually become [ㄹㄹ], in either order.",
+      p: ["ㄴ + ㄹ → [ㄹㄹ]; ㄹ + ㄴ → [ㄹㄹ].",
+          "This is called ㄹ-assimilation. Both sounds are pronounced as ㄹ.",
+          "In some words, the opposite happens: ㄹ becomes [ㄴ] instead. For example, 신라 is pronounced [실라], while 의견란 is pronounced [의견난]."],
+      q: [{ drill: "pron", words: ["난로", "진리", "훈련", "권력", "물난리"] }]
+    },
+    "Getting tense": {
+      k: "Substitution · ㄱ·ㄷ·ㅈ → ㄲ·ㄸ·ㅉ",
+      s: "After a final consonant pronounced as [ㄱ], [ㄷ], or [ㅂ], the following plain consonant often becomes tense.",
+      p: ["[ㄱ], [ㄷ], or [ㅂ] + ㄱ, ㄷ, ㅂ, ㅅ, or ㅈ → ㄲ, ㄸ, ㅃ, ㅆ, or ㅉ.",
+          "Tensing can also occur after verb stems ending in ㄴ or ㅁ, as in 신고 [신ː꼬] and 삼고 [삼ː꼬].",
+          "These sound changes do not usually change the spelling."],
+      q: [{ drill: "pron", words: ["책상", "국수", "입구", "옆집", "약속", "약국"] }]
+    },
+    "An extra ㄹ appears": {
+      t: "An extra ㄴ appears", k: "Addition · Extra ㄴ → ㄹ",
+      s: "In certain compound and derived words, an extra ㄴ sound can appear before 이, 야, 여, 요, or 유. If ㄹ comes before this added ㄴ, the sounds usually become [ㄹㄹ].",
+      p: ["Step 1: An extra ㄴ sound is added before the following vowel.",
+          "Step 2: If ㄹ comes before the added ㄴ, the sequence becomes [ㄹㄹ].",
+          "This change occurs in certain words, not in every word with these vowel combinations."]
+    },
+    "Vowels that merge or grow": {
+      k: "Contraction · Addition",
+      s: "When certain vowels meet, they can combine into one vowel. In other cases, a glide can appear between them in pronunciation.",
+      p: ["Contraction: Two vowels combine into one, as in 보아 → 봐, 주어 → 줘, and 되어 → 돼.",
+          "A y-glide may appear in the pronunciation of certain vowel combinations: 되어 [되어/되여], 피어 [피어/피여].",
+          "Pronunciation can vary even when the spelling stays the same."],
+      ex: ["보아요 → 봐요", "되어요 → 돼요", "피어 [피어/피여]", "되어 [되어/되여]"],
+      q: [["주어요 contracts to…", ["주요", "줘요", "좌요", "쥐요"], 1, "ㅜ + ㅓ → ㅝ: 줘요."],
+          ["Which pronunciation of 되어 is allowed besides [되어]?", ["[되여]", "[대어]", "[되요]", "[돼어]"], 0, "A y-glide may be added: [되여]."],
+          ["Which is the contracted form of 되어요?", ["되요", "돼요", "대요", "도요"], 1, "되어요 can be shortened to 돼요."]]
+    },
+    "Dictation challenge": {
+      s: "Listen to words that sound different from their spelling and write the correct spelling. Korean children practice this skill through dictation, too.",
+      p: ["Write the correct spelling, not just the sound you hear.",
+          "Then write the pronunciation in brackets.",
+          "Identify the sound-change rule."],
+      ex: ["[궁물] → 국물", "[가치] → 같이", "[실라] → 신라", "[추카] → 축하", "[밤맏] → 밥맛", "[날로] → 난로", "[책쌍] → 책상", "[생년필] → 색연필"]
+    }
+  },
+  sinchon: {
+    "The verb comes last": {
+      s: "In Korean, the verb usually comes at the end of the sentence. Particles show what role each word plays, so the word order can be more flexible than in English.",
+      p: ["A basic Korean sentence often follows subject–object–verb order: 저는 커피를 마셔요.",
+          "Particles mark each word's role, so technically the object can sometimes come before the subject: 커피를 저는 마셔요.",
+          "When the subject is clear from context, you can leave it out.",
+          "Time and place usually come before the object."],
+      ex: [["저는 커피를 마셔요.", "I drink coffee."], ["민지가 책을 읽어요.", "Minji reads a book."], ["(저는) 학생이에요.", "(I am) a student."]]
+    },
+    "Saying what something is": {
+      s: "Use 이에요 after a noun ending in a consonant and 예요 after a noun ending in a vowel. To say that something is not something, use 아니에요.",
+      q: [["음식 + ___", ["예요", "이에요", "이예요", "에요"], 1, "음식 ends in a consonant, so 이에요."],
+          ["남자 + ___", ["이에요", "예요", "이예요", "에요"], 1, "남자 ends in a vowel, so 예요."],
+          ["\"I'm not Korean\" is…", ["저는 한국 사람이에요.", "저는 한국 사람이 아니에요.", "저는 한국 사람예요.", "저는 한국 사람에요."], 1, "N이/가 아니에요."]]
+    },
+    "Topic, subject and object markers": {
+      s: "Korean uses particles after nouns to show how they function in a sentence. Three important particles are 은/는, 이/가, and 을/를.",
+      p: ["은/는: Topic marker. Shows what the sentence is about and can express contrast. Use 은 after a consonant and 는 after a vowel.",
+          "이/가: Subject marker. Marks the grammatical subject and often highlights who or what is involved. Use 이 after a consonant and 가 after a vowel.",
+          "을/를: Object marker. Marks the direct object of an action. Use 을 after a consonant and 를 after a vowel."],
+      ex: ["저는 한국 사람이에요.", "비가 와요.", "빵을 먹어요."],
+      q: [["바지___ 입어요. (object)", ["은", "이", "를", "을"], 2, "바지 ends in a vowel: 를."],
+          ["누가 왔어요? — 민수___ 왔어요.", ["는", "가", "를", "도"], 1, "Answering 누가 (who) takes 이/가: it's the new information."],
+          ["Which particle marks the topic?", ["이/가", "을/를", "은/는", "에"], 2, "은/는 marks what the sentence is about."]]
+    },
+    "Having and being there": {
+      t: "Existence, location, possession",
+      s: "A verb pair, 있어요 and 없어요, helps you talk about what exists, what you have, and where something is.",
+      p: ["N이/가 있어요: Something exists, or someone has something.",
+          "N이/가 + place + 에 있어요: Something is located somewhere.",
+          "N이/가 없어요: Something does not exist, or someone does not have something.",
+          "N이/가 + place + 에 없어요: Something is not located somewhere.",
+          "In these patterns, “something” can be replaced with “someone” when referring to a person."],
+      ex: ["시간이 있어요.", "가방이 의자에 있어요.", "돈이 없어요.", "민수가 자리에 없어요."],
+      q: [["\"I have a wife\" is…", ["아내가 있어요.", "아내를 있어요.", "아내예요.", "아내에 있어요."], 0, "Possession uses N이/가 있어요."],
+          ["\"Minji is at school\": 민지가 학교___ 있어요.", ["에서", "에", "를", "가"], 1, "Location of existence takes 에."],
+          ["\"I don't have a bag\" is…", ["가방이 없어요.", "가방을 없어요.", "가방이 안 있어요.", "가방이 아니에요."], 0, "없어요 is the opposite of 있어요."]]
+    },
+    "Asking questions": {
+      s: "Korean question words usually appear where the answer would go. The basic sentence structure stays the same, with the verb at the end.",
+      p: ["누구 = who, 뭐 / 무엇 = what, 어디 = where, 언제 = when, 왜 = why, 어떻게 = how.",
+          "누구 + 가 becomes 누가: 누가 왔어요? 뭐 is a common spoken form of 무엇.",
+          "몇 means how many or which number and is used with counters: 몇 시 (what time), 몇 개 (how many items), 몇 명 (how many people).",
+          "얼마 asks about an amount or price: 얼마예요? (How much is it?)"],
+      ex: [["이게 뭐예요?", "What is this?"], ["어디에 가요?", "Where are you going?"], ["누가 왔어요?", "Who came?"], ["지금 몇 시예요?", "What time is it now?"],
+           ["이거 얼마예요?", "How much is this?"], ["언제 집에 가요?", "When do you go home?"], ["왜 갔어요?", "Why did you go?"], ["어떻게 했어요?", "How did you do that?"]],
+      q: [["\"Where are you going?\" is…", ["어디에 가요?", "언제 가요?", "어떻게 가요?", "누가 가요?"], 0, "어디 = where."],
+          ["누구 + 가 becomes…", ["누구가", "누가", "누구", "누군가"], 1, "The subject form is 누가."],
+          ["\"How many people?\" is…", ["몇 명이에요?", "얼마 명이에요?", "누구예요?", "몇 개예요?"], 0, "몇 + counter: 몇 명."]]
     }
   },
   noryangjin: {
@@ -280,7 +405,15 @@ const TERM_PARENS = [
 ];
 
 const UNIT_EDITS = {
-  seochon: { fact: f => f.replace(/준수방/g, "Junsu-bang").replace(/통인시장/g, "Tongin Market").replace(/\s*\(\s*\)/g, "") }
+  seochon: { fact: f => f.replace(/준수방/g, "Junsu-bang").replace(/통인시장/g, "Tongin Market").replace(/\s*\(\s*\)/g, "") },
+  hongdae: {
+    blurb: "The music district. Korean spelling follows established patterns, but pronunciation can change when sounds meet. Every rule here has a reason.",
+    fact: "홍대 (Hongdae) is short for 홍익대학교 (Hongik University). Koreans often shorten university names this way: 연대 (Yeondae, Yonsei University) and 고대 (Godae, Korea University). The same habit turns 생일 파티 (saengil pati, birthday party) into 생파 (saengpa)."
+  },
+  sinchon: {
+    blurb: "A neighborhood full of first meetings. Learn how Korean sentences work and how to ask questions.",
+    fact: "Yonsei University's Korean Language Institute (한국어학당) opened here in 1959. It was one of the earliest institutions in Korea dedicated to teaching Korean to international students."
+  }
 };
 
 (function applyEdits() {

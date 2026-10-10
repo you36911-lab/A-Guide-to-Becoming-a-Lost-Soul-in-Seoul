@@ -62,7 +62,8 @@ const MORE_LESSONS = {
 
   /* ── A0 홍대 ── */
   hongdae: [
-    { t: "Four ways sounds change", k: "음운 변동의 네 유형",
+    // first in Hongdae: the overview, then each kind of change in detail
+    { at: 0, t: "Four ways sounds change", k: "음운 변동의 네 유형",
       s: "Every rule you've met in Hongdae is one of four kinds of change.",
       p: ["Replacement (교체): one sound turns into another. 비음화, 유음화, 구개음화, 된소리되기 and the seven final sounds.",
           "Deletion (탈락): a sound disappears. Final ㅎ before a vowel, one consonant of a double final, ㄹ and ㅡ in verb endings.",

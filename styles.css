@@ -578,9 +578,20 @@ body.splash-on { overflow: hidden; }
 .wp-preview:empty { display: none; }
 .wp-preview [lang="ko"] { font-family: var(--ko); font-weight: 600; color: var(--ink); }
 .wp-tip { margin-top: .9rem; font-size: .8rem; color: var(--ink-2); line-height: 1.5; padding: .6rem .75rem; background: var(--accent-soft); border-radius: var(--r-s); }
-.wp-list li { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: baseline; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+.wp-tabs { margin: 0 0 .2rem; }
+.wp-tabs button { padding: .4rem .85rem; font-size: .84rem; }
+.wp-search { width: 100%; margin: .8rem 0 0; padding: .5rem .8rem; }
+.wp-list { list-style: none; margin: .6rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+.wp-list li { display: grid; grid-template-columns: auto auto 1fr auto; gap: .5rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
 .wp-list .sw { font-size: 1rem; }
-.wp-list .muted { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-list .muted { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wp-saved { color: var(--accent-ink); font-size: .85rem; font-weight: 700; }
+.wp-empty { margin-top: .8rem; font-size: .88rem; }
+.wb-lists { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.1rem; }
+.wb-you { font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: var(--accent-ink); margin-left: .2rem; }
+.filter-btn[aria-pressed="true"] .wb-you { color: inherit; opacity: .8; }
+.wb-bulk { margin-bottom: .8rem; }
+.wb-main .btn { margin-left: auto; }
 
 /* wordbook (Review) */
 .wb-stat { display: block; font-size: .8rem; color: var(--ink-2); margin-top: .15rem; }
@@ -608,6 +619,11 @@ body.splash-on { overflow: hidden; }
 .card-back .wb-ex { text-align: left; margin-top: .6rem; }
 .wb-edit { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .wb-edit .input-ko { flex: 1 1 14rem; }
+
+/* type-in questions */
+.q-write { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .7rem; }
+.q-write .input-ko { flex: 1 1 14rem; padding: .6rem .85rem; font-size: 1rem; }
+.qcard.is-right .q-write .input-ko { border-color: var(--line-strong); background: var(--surface); }
 
 /* meaning on hover */
 .gloss-mark { position: fixed; z-index: 58; pointer-events: none; border-radius: 4px; background: rgba(228, 111, 134, .14); box-shadow: inset 0 -2px 0 var(--accent); }

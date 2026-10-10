@@ -20,21 +20,36 @@
   const SRS_DAYS = [0, 1, 3, 7, 16, 35, 80];
 
   /* ═════════ State ═════════ */
-  const state = loadState();
 
   function freshState() {
-    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [], showPron: false, guides: {}, hoverGloss: true };
+    return { done: new Set(), freeRoam: false, startLevel: null, saved: {}, mistakes: {}, drafts: {}, checks: {}, notes: [], days: [], hanjaKnown: new Set(), lastBackup: null, diary: {}, ttsFallback: true, showSplash: true, readDone: [], showPron: false, guides: {}, hoverGloss: true, mig: MIG_LATEST };
+  }
+  /* Lessons are saved by position ("hongdae:3"), so moving a lesson must move what was saved with it.
+     Oct 2026: Hongdae's overview lesson moved to the front; Sinchon's introduce-yourself mission moved
+     to Yeouido, before the diary mission. */
+  const MIG_LATEST = 1;
+  const ID_MOVES = new Map([...[0, 1, 2, 3, 4, 5, 6].map(j => [`hongdae:${j}`, `hongdae:${j + 1}`]), ["hongdae:7", "hongdae:0"], ["yeouido:4", "yeouido:5"], ["sinchon:5", "yeouido:4"]]);
+  function migrate(st) {
+    if ((st.mig || 0) >= MIG_LATEST) return st;
+    const move = id => { const [l, rest] = String(id).split(/#(.*)/s); return ID_MOVES.has(l) ? ID_MOVES.get(l) + (rest != null ? "#" + rest : "") : id; };
+    const rekey = obj => Object.fromEntries(Object.entries(obj || {}).map(([k, v]) => [move(k), v]));
+    st.done = (st.done || []).map(move);
+    st.drafts = rekey(st.drafts); st.checks = rekey(st.checks);
+    st.mistakes = Object.fromEntries(Object.entries(st.mistakes || {}).map(([k, m]) => [move(k), { ...m, id: move(m.id), src: m.src && move(m.src) }]));
+    st.mig = MIG_LATEST;
+    return st;
   }
   function loadState() {
     const base = freshState();
     try {
       const raw = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-      if (raw) return { ...base, ...raw, done: new Set(raw.done || []), hanjaKnown: new Set(raw.hanjaKnown || []) };
+      if (raw) { migrate(raw); return { ...base, ...raw, done: new Set(raw.done || []), hanjaKnown: new Set(raw.hanjaKnown || []) }; }
       const v1 = JSON.parse(localStorage.getItem("lss:progress:v1") || "null");
-      if (v1) return { ...base, done: new Set(v1.done || []), freeRoam: !!v1.freeRoam };
+      if (v1) return { ...base, done: new Set(migrate({ done: v1.done || [] }).done), freeRoam: !!v1.freeRoam };
     } catch { /* fall through */ }
     return base;
   }
+  const state = loadState();
   if (!state.guides) state.guides = {};
   if (state.guideSeen) { state.guides.journey = true; delete state.guideSeen; }
   function save() {
@@ -267,6 +282,7 @@
       if (!d || !Array.isArray(d.done)) { toast("That file isn't a backup from this app."); return; }
       const when = payload.exportedAt ? new Date(payload.exportedAt).toLocaleDateString() : "an unknown date";
       if (!confirm(`Restore the backup from ${when}? It has ${d.done.length} completed lessons and ${Object.keys(d.saved || {}).length} saved words. Your current progress in this browser will be replaced.`)) return;
+      migrate(d);
       const base = freshState();
       Object.assign(state, base, d, {
         done: new Set(d.done),
@@ -555,7 +571,7 @@
     const firstOpen = u.lessons.findIndex((_, k) => !state.done.has(lessonId(i, k)));
     return `
       <p class="kicker">In this place</p>
-      <h2 class="lesson-title">${u.lessons.filter(l => l.kind !== "mission").length} lessons and a mission</h2>
+      <h2 class="lesson-title">${u.lessons.filter(l => l.kind !== "mission").length} lessons and ${(m => m === 1 ? "a mission" : `${m} missions`)(u.lessons.filter(l => l.kind === "mission").length)}</h2>
       <ol class="intro-list">
         ${u.lessons.map((l, k) => `<li><a href="${placeHref(i, k)}"><span class="intro-n">${l.kind === "mission" ? "★" : pad2(k + 1)}</span><span class="intro-t">${l.kind === "mission" ? "Mission: " : ""}${esc(l.t)}${l.k ? `<span${/[가-힣ㄱ-ㅣ]/.test(l.k) ? ' lang="ko"' : ""}>${esc(l.k)}</span>` : ""}</span><span class="intro-s">${state.done.has(lessonId(i, k)) ? "Done" : ""}</span></a></li>`).join("")}
       </ol>
@@ -1108,7 +1124,7 @@
     const u = UNITS[i], l = u.lessons[j];
     const id = lessonId(i, j), isDone = state.done.has(id), mission = l.kind === "mission";
     const nextL = u.lessons[j + 1], nextU = UNITS[i + 1];
-    const qs = mission ? [] : questionsFor(i, j);
+    const qs = mission && !l.write ? [] : questionsFor(i, j);
     const nLessons = u.lessons.filter(x => x.kind !== "mission").length;
     const checks = state.checks[id] || [];
     const labLink = (u.id === "gwanghwamun" && j < 4) ? ["#/lab?tool=fonts", "See how the letters look in different typefaces"]
@@ -1141,7 +1157,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
         <div class="examples${state.showPron ? " show-pron" : ""}" lang="ko">${l.ex.map(x => exampleHTML(x)).join("")}</div>
       </section>` : ""}
 
-      ${mission ? `
+      ${mission && !l.write ? `
       <section class="lesson-block b-turn">
         <h3 class="block-h"><label for="draft">Your turn</label></h3>
         ${l.handwriting ? `<p class="hand-intro">First, by hand:</p>${handPadHTML(l.ghost || "")}<p class="hand-intro">Then, typed:</p>` : ""}
@@ -1153,7 +1169,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
 
       ${qs.length ? `
       <section class="lesson-block b-practice">
-        <div class="practice-head"><h3 class="block-h">Practice</h3><span class="score" id="score"></span></div>
+        <div class="practice-head"><h3 class="block-h">${mission ? "Your turn" : "Practice"}</h3><span class="score" id="score"></span></div>
         <div class="qlist">${qs.map((q, k) => questionHTML(q, k + 1)).join("")}</div>
       </section>` : ""}
 
@@ -1192,7 +1208,10 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
       renderPlace(u.id, j);
       window.scrollTo(0, y);
     });
-    if (mission) {
+    if (mission) $$("[data-check]", root).forEach(c => c.addEventListener("change", () => {
+      const arr = state.checks[id] || []; arr[Number(c.dataset.check)] = c.checked; state.checks[id] = arr; save();
+    }));
+    if (mission && !l.write) {
       const ta = $("#draft"), cnt = $("#draftCount");
       const count = () => { const n = (ta.value.match(/[가-힣]/g) || []).length; cnt.textContent = `${n} Korean ${n === 1 ? "syllable" : "syllables"}.`; };
       count();
@@ -1200,11 +1219,8 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
       ta.addEventListener("input", () => { count(); clearTimeout(t); t = setTimeout(() => { state.drafts[id] = ta.value; if (ta.value.trim()) markActive(); save(); }, 400); });
       $("#checkDraft").addEventListener("click", () => { $("#draftCheck").innerHTML = spellHTML(ta.value); });
       wireKeyboardToggle(ta.closest(".lesson-block"), ta, () => { count(); state.drafts[id] = ta.value; save(); });
-      $$("[data-check]", root).forEach(c => c.addEventListener("change", () => {
-        const arr = state.checks[id] || []; arr[Number(c.dataset.check)] = c.checked; state.checks[id] = arr; save();
-      }));
     }
-    const qs = mission ? [] : questionsFor(i, j);
+    const qs = mission && !l.write ? [] : questionsFor(i, j);
     if (qs.length) {
       let right = 0, answered = 0;
       wireQuestions(root, qs, (q, ok) => {
@@ -1223,6 +1239,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     const id = lessonId(u, j);
     if (qCache[id]) return qCache[id];
     const out = [];
+    (UNITS[u].lessons[j].write || []).forEach(w => out.push({ type: "write", q: w.en, acc: w.a, model: w.model, why: w.why || "" }));
     (PRACTICE[id] || []).forEach(item => {
       if (Array.isArray(item)) out.push({ type: "mc", q: item[0], o: item[1], a: item[2], why: item[3] });
       else if (item.order) out.push({ type: "order", q: item.q, order: item.order, why: item.why });
@@ -1315,8 +1332,28 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     if (/ means…$|^What does|mean\?$/.test(t)) return "Choose the meaning.";
     return "Choose the best answer.";
   }
+  // accepted answers are patterns: "(어디에|어디|) (가요|가세요)" means 어디에/어디/nothing, then 가요/가세요
+  function expandAnswer(p) {
+    const m = p.match(/\(([^()]*)\)/);
+    if (!m) return [p];
+    return m[1].split("|").flatMap(alt => expandAnswer(p.slice(0, m.index) + alt + p.slice(m.index + m[0].length)));
+  }
+  const normAnswer = s => String(s).normalize("NFC").replace(/[\s.,!?~。？！…"'“”]/g, "");
+  const answerOk = (q, typed) => { const t = normAnswer(typed); return !!t && (q.acc || []).some(p => expandAnswer(p).some(a => normAnswer(a) === t)); };
   function questionHTML(q, n) {
     const num = n ? `<span class="q-n">${n}</span>` : "";
+    if (q.type === "write") {
+      return `<div class="qcard" data-qid="${esc(q.id)}">
+        <p class="q-instr">Write this in Korean, then check.</p>
+        <p class="q-text">${num}<span>${esc(q.q)}</span></p>
+        <form class="q-write">
+          <label class="sr-only" for="w-${esc(q.id)}">Your Korean</label>
+          <input id="w-${esc(q.id)}" class="input-ko" lang="ko" type="text" autocomplete="off" spellcheck="false" placeholder="한국어로 써 보세요" />
+          <button class="btn btn-small btn-primary" type="submit">Check</button>
+        </form>
+        <p class="q-feedback" aria-live="polite"></p>
+      </div>`;
+    }
     if (q.type === "order") {
       return `<div class="qcard" data-qid="${esc(q.id)}">
         <p class="q-instr">Tap the words in the right order to build the sentence.</p>
@@ -1346,6 +1383,31 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
         markActive();
         onResult && onResult(q, ok);
       };
+      if (q.type === "write") {
+        // typing gets as many tries as you like; only the first miss counts as a mistake
+        let missed = false;
+        card.querySelector(".q-write").addEventListener("submit", e => {
+          e.preventDefault();
+          const input = card.querySelector("input"), typed = input.value.trim();
+          if (!/[가-힣]/.test(typed)) { fb.textContent = "Type your answer in Korean first."; return; }
+          if (card.classList.contains("is-right")) return;
+          const ok = answerOk(q, typed);
+          card.classList.remove("is-wrong");
+          if (ok) {
+            card.classList.add("is-right"); input.readOnly = true;
+            fb.innerHTML = `<strong>Correct.</strong> ${normAnswer(typed) === normAnswer(q.model) ? "" : `Another way to say it: <span lang="ko">${esc(q.model)}</span>`} ${esc(q.why || "")}`;
+            markActive();
+            if (!missed || q.fromReview) onResult && onResult(q, true);
+          } else {
+            card.classList.add("is-wrong");
+            fb.innerHTML = `<strong>Not quite.</strong> Check the spelling and the ending, then try again. One way to say it: <span lang="ko">${esc(q.model)}</span>` +
+              (!missed && !q.fromReview ? `<span class="q-saved">Saved to <a href="#/review?tab=mistakes">Review → Mistakes</a>.</span>` : "");
+            markActive();
+            if (!missed) { missed = true; onResult && onResult(q, false); }
+          }
+        });
+        return;
+      }
       if (q.type === "order") {
         const ans = card.querySelector(".order-answer");
         const picked = [];
@@ -1373,7 +1435,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     });
   }
   function recordResult(q, ok) {
-    if (!ok) state.mistakes[q.id] = { id: q.id, type: q.type, q: q.q, o: q.o, a: q.a, order: q.order, why: q.why, prompt: q.prompt, src: q.src, at: Date.now() };
+    if (!ok) state.mistakes[q.id] = { id: q.id, type: q.type, q: q.q, o: q.o, a: q.a, order: q.order, why: q.why, prompt: q.prompt, src: q.src, acc: q.acc, model: q.model, at: Date.now() };
     save();
   }
 
@@ -2111,7 +2173,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     $$("[data-tab]").forEach(b => b.addEventListener("click", () => { reviewTab = b.dataset.tab; renderReview(new URLSearchParams()); }));
     const p = $("#reviewPanel");
 
-    if (reviewTab === "words") renderWordbook(p, saved, due);
+    if (reviewTab === "words") { if (params.get("list")) wbList = params.get("list"); renderWordbook(p, saved, due); }
 
     if (reviewTab === "mistakes") {
       if (!mis.length) { p.innerHTML = emptyHTML("No mistakes waiting.", "Questions you miss in lessons and quizzes wait here until you get them right.", "#/", "Back to the map"); return; }
@@ -2124,14 +2186,39 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     }
 
   }
-  let wbFilter = "all", wbSort = "new", wbQuery = "";
+  let wbFilter = "all", wbSort = "new", wbQuery = "", wbList = "mine";
+  // My words, or the built-in list for a level (the learner's own level first, any level they've reached)
+  function wordListsHTML() {
+    const lv = curLevel(), open = LEVEL_ORDER.filter(levelOpen);
+    if (wbList !== "mine" && !open.includes(wbList)) wbList = lv;
+    return `<div class="wb-lists" role="group" aria-label="Word lists">
+      <button type="button" class="filter-btn" data-wbl="mine" aria-pressed="${wbList === "mine"}">My words <span class="seg-n">${Object.keys(state.saved).length}</span></button>
+      ${open.map(c => `<button type="button" class="filter-btn" data-wbl="${c}" aria-pressed="${wbList === c}">${c} words${c === lv ? ` <span class="wb-you">your level</span>` : ""}</button>`).join("")}
+    </div>`;
+  }
+  function renderLevelList(p, code) {
+    const rows = levelWords(code), unsaved = rows.filter(r => !state.saved[r.w]);
+    p.innerHTML = `${wordListsHTML()}
+      <div class="wb-tip"><span class="wb-tip-ico" aria-hidden="true">✦</span><p>The core words for <strong>${code} ${LEVELS[code].en.toLowerCase()}</strong>. Save the ones you want to practice and they join My words, where they come back for review. ${canHover.matches ? "You can also <strong>double-click</strong> any Korean word on the site to save it." : ""}</p></div>
+      ${unsaved.length ? `<div class="wb-bulk"><button type="button" class="btn btn-small btn-ghost" id="wbSaveAll">Save all ${unsaved.length} to My words</button></div>` : ""}
+      <ul class="wb-list">${rows.map(r => `<li class="wb-item"><div class="wb-main"><span class="sw" lang="ko">${esc(r.w)}</span>${speakBtn(r.w)}<span class="wb-en">${esc(r.en)}</span>
+        <button type="button" class="btn btn-small ${state.saved[r.w] ? "btn-done" : "btn-quiet"}" data-save="${esc(r.w)}">${state.saved[r.w] ? "In your wordbook ✓" : "Save to wordbook"}</button></div></li>`).join("")}</ul>`;
+    wireSaveButtons(p);
+    $("#wbSaveAll")?.addEventListener("click", () => {
+      const now = Date.now();
+      unsaved.forEach((r, k) => { state.saved[r.w] = { box: 0, due: now, at: now + k, en: r.en, memo: "", ctx: { label: `${code} words`, href: `#/review?tab=words&list=${code}` }, ex: "", form: "" }; });
+      markActive(); save(); refreshWordViews(); toast(`Saved ${unsaved.length} words to My words.`);
+    });
+  }
   const WB_KNOWN = 4; // box 4 = the next review is 16+ days away
   const howToSave = () => canHover.matches
     ? `<strong>Hover</strong> over any Korean word on the site to see what it means, and <strong>double-click</strong> it to save it here. You can also save words from the dictionary, or type one in below.`
     : `Save words from the dictionary, the <strong>Words</strong> button in the corner, or type one in below. On a computer, hovering over Korean shows its meaning and double-clicking a word saves it.`;
   function renderWordbook(p, saved, due) {
+    const wireLists = () => $$("[data-wbl]", p).forEach(b => b.addEventListener("click", () => { wbList = b.dataset.wbl; renderWordbook(p, saved, due); }));
+    if (wbList !== "mine") { wordListsHTML(); if (wbList !== "mine") { renderLevelList(p, wbList); wireLists(); return; } }
     const known = saved.filter(w => (state.saved[w].box || 0) >= WB_KNOWN).length;
-    p.innerHTML = `
+    p.innerHTML = `${wordListsHTML()}
       ${saved.length ? `<div class="review-start">
         <p>${due.length ? `<strong>${due.length}</strong> ${due.length === 1 ? "word is" : "words are"} due.` : "Nothing due right now. Saved words come back after 1, 3, 7, 16 and 35 days."}
           <span class="wb-stat">${saved.length} ${saved.length === 1 ? "word" : "words"} saved · ${known} known</span></p>
@@ -2158,6 +2245,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
       </div>
       <ul class="wb-list" id="wbList"></ul>`
       : emptyHTML("Your wordbook is empty.", "Words you save come back here just before you'd forget them.", "#/dictionary", "Open the dictionary")}`;
+    wireLists();
     $("#startCards")?.addEventListener("click", e => openCards(due, e.currentTarget));
     wireWordForm($("#wbAdd"), $("#wbIn"), $("#wbMemo"), $("#wbPreview"), null);
     if (!saved.length) return;
@@ -2327,32 +2415,40 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     if (open) { renderNotesPanel(); $("#npIn").focus(); } else fab.focus();
   }
 
-  /* ═════════ Quick wordbook (available on every screen) ═════════ */
+  /* ═════════ Quick wordbook (available on every screen): read your lists; saving is by double-click ═════════ */
+  // the built-in list for each level: the core dictionary words of that level
+  const levelWords = code => DICTIONARY.filter(e => e[3] === code && !e[0].startsWith("-")).map(e => ({ w: e[0], en: e[2] }));
+  const curLevel = () => UNITS[currentUnit()].level;
+  const savedByNewest = () => Object.keys(state.saved).sort((a, b) => (state.saved[b].at || 0) - (state.saved[a].at || 0));
+  let wpView = "mine", wpQuery = "";
   function renderWordsPanel() {
     const panel = $("#wordsPanel");
     if (panel.hidden) return;
-    const ctx = currentContext();
-    const recent = Object.entries(state.saved).sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).slice(0, 5);
-    const total = Object.keys(state.saved).length;
+    const lv = curLevel();
+    if (wpView !== "mine") wpView = lv;
+    const rows = wpView === "mine" ? savedByNewest().map(w => ({ w, en: wordMeaning(w) })) : levelWords(lv);
+    const q = wpQuery.trim().toLowerCase();
+    const shown = q ? rows.filter(r => r.w.includes(q) || (r.en || "").toLowerCase().includes(q)) : rows;
     panel.innerHTML = `
       <div class="np-head">
         <p class="np-title">Wordbook</p>
         <button class="icon-btn" type="button" data-act="wp-close" aria-label="Close the wordbook"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div>
-      <form class="np-form" id="wpForm">
-        <label class="sr-only" for="wpIn">Korean word</label>
-        <input id="wpIn" class="input-ko" lang="ko" type="text" placeholder="A Korean word: 학교, 먹었어요…" autocomplete="off" />
-        <p class="wp-preview" id="wpPreview" aria-live="polite"></p>
-        <label class="sr-only" for="wpMemo">Meaning or memo (optional)</label>
-        <input id="wpMemo" class="input-ko" type="text" placeholder="Meaning or memo (optional)" autocomplete="off" />
-        ${ctx ? `<label class="np-ctx"><input type="checkbox" id="wpCtx" checked /> <span>Link to <span lang="ko">${esc(ctx.label)}</span></span></label>` : ""}
-        <button class="btn btn-primary btn-small" type="submit">Save word</button>
-      </form>
-      <p class="wp-tip">${canHover.matches ? "Tip: hover over any Korean on the page to see its meaning. Double-click a word to save it here." : "Tip: on a computer, hovering over Korean shows its meaning and double-clicking a word saves it."}</p>
-      ${recent.length ? `<ul class="np-list wp-list">${recent.map(([w]) => `<li><span class="sw" lang="ko">${esc(w)}</span><span class="muted">${esc(wordMeaning(w))}</span></li>`).join("")}</ul>` : ""}
-      <a class="np-more" href="#/review?tab=words">Open the wordbook${total ? ` (${total})` : ""} ${arrowR}</a>`;
+      <div class="segmented wp-tabs" role="tablist" aria-label="Word lists">
+        <button type="button" role="tab" aria-selected="${wpView === "mine"}" data-wpv="mine">My words <span class="seg-n">${Object.keys(state.saved).length}</span></button>
+        <button type="button" role="tab" aria-selected="${wpView !== "mine"}" data-wpv="${lv}">${lv} words</button>
+      </div>
+      <p class="wp-tip">${canHover.matches ? "<strong>Double-click</strong> any Korean word on the site to save it to My words. Hover over one to see what it means." : "Save words from the dictionary or the wordbook page. On a computer, double-clicking any Korean word saves it."}</p>
+      ${rows.length > 6 ? `<input class="note-search wp-search" id="wpSearch" type="search" placeholder="Search this list" aria-label="Search this list" value="${esc(wpQuery)}" />` : ""}
+      ${shown.length ? `<ul class="wp-list">${shown.map(r => `<li><span class="sw" lang="ko">${esc(r.w)}</span>${speakBtn(r.w)}<span class="muted">${esc(r.en || "")}</span>${wpView !== "mine" && state.saved[r.w] ? `<span class="wp-saved" title="In My words">✓</span>` : ""}</li>`).join("")}</ul>`
+        : `<p class="muted wp-empty">${q ? "No words match." : wpView === "mine" ? "No saved words yet." : "No words for this level yet."}</p>`}
+      <a class="np-more" href="#/review?tab=words${wpView === "mine" ? "" : `&list=${lv}`}">Open the wordbook ${arrowR}</a>`;
     $("[data-act='wp-close']", panel).addEventListener("click", () => toggleWords());
-    wireWordForm($("#wpForm"), $("#wpIn"), $("#wpMemo"), $("#wpPreview"), $("#wpCtx"));
+    $$("[data-wpv]", panel).forEach(b => b.addEventListener("click", () => { wpView = b.dataset.wpv; wpQuery = ""; renderWordsPanel(); }));
+    $("#wpSearch")?.addEventListener("input", e => {
+      wpQuery = e.target.value; const pos = e.target.selectionStart;
+      renderWordsPanel(); const s = $("#wpSearch"); s.focus(); s.setSelectionRange(pos, pos);
+    });
   }
   function toggleWords(focusFab = true) {
     const panel = $("#wordsPanel"), fab = $("#wordsFab");
@@ -2360,7 +2456,7 @@ ${l.ex && l.ex.length ? `      <section class="lesson-block b-examples">
     if (open && !$("#notesPanel").hidden) toggleNotes();
     panel.hidden = !open;
     fab.setAttribute("aria-expanded", String(open));
-    if (open) { renderWordsPanel(); $("#wpIn").focus(); } else if (focusFab) fab.focus();
+    if (open) { renderWordsPanel(); ($("#wpSearch") || $("[data-wpv]", panel))?.focus(); } else if (focusFab) fab.focus();
   }
 
   /* ═════════ Hover any Korean for its meaning; double-click to save it ═════════ */
