@@ -10,9 +10,9 @@ const MORE_LESSONS = {
   gwanghwamun: [
     { at: 0, t: "Hangul at a glance", k: "", figure: "hangul-chart",
       s: "Before the details, here is the whole alphabet on one page: 19 consonants and 21 vowels. You'll learn how each one works in this neighborhood and the next.",
-      p: ["Hangul has 14 basic consonants and 10 basic vowels.",
-          "Five double consonants (ㄲ ㄸ ㅃ ㅆ ㅉ) and eleven compound vowels are built from the basic letters.",
-          "Every syllable is a block made from these letters: a consonant, a vowel, and sometimes a final consonant."],
+      p: ["Hangul has ==14 basic consonants and 10 basic vowels==.",
+          "==Five double consonants== (ㄲ ㄸ ㅃ ㅆ ㅉ) and ==eleven compound vowels== are built from the basic letters.",
+          "Every syllable is a ==block== made from these letters: a consonant, a vowel, and sometimes a final consonant."],
       ex: [], noPractice: true,
       q: [] }
   ],

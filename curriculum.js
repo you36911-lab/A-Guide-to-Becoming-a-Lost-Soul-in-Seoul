@@ -139,7 +139,7 @@ const UNITS = [
         ex: ["저는 커피를 마셔요.", "민지가 책을 읽어요.", "(저는) 학생이에요."] },
       { t: "Saying what something is", k: "이에요 / 예요, 아니에요",
         s: "Attach 이에요 after a consonant and 예요 after a vowel. The negative is 아니에요.",
-        p: ["학생 + 이에요 → 학생이에요.", "의사 + 예요 → 의사예요.", "Negative: N이/가 아니에요."],
+        p: ["학생 + ==이에요== → 학생이에요.", "의사 + ==예요== → 의사예요.", "Negative: N이/가 아니에요."],
         ex: ["저는 학생이에요.", "제 친구는 의사예요.", "저는 한국 사람이 아니에요."] },
       { t: "Topic, subject and object markers", k: "은/는 · 이/가 · 을/를 (조사)",
         s: "Korean marks each word's role with a particle after it. These three are the topic marker, the subject marker and the object marker.",
