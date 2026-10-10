@@ -872,7 +872,8 @@ html { scrollbar-width: thin; scrollbar-color: #E6CCD3 transparent; }
 
 /* highlighter */
 .hl { background: linear-gradient(transparent 52%, #F6E08F 52%, #F6E08F 92%, transparent 92%); color: inherit; padding: 0 .12em; border-radius: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.lesson-term { display: inline; background: linear-gradient(transparent 55%, #F6E08F 55%, #F6E08F 93%, transparent 93%); padding: 0 .15em; }
+.lesson-term { display: inline; }
+.ki-b { font-weight: 700; color: var(--ink); }
 .lesson-term + .lesson-lead { margin-top: 1.4rem; }
 
 /* pronunciation toggle */
