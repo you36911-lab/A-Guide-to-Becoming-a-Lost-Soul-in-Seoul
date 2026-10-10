@@ -582,12 +582,8 @@
 
   // Mark the important part of a key idea with a highlighter stroke:
   // ==text== explicitly, otherwise the pattern before the first colon.
-  function highlight(s) {
-    let t = esc(s);
-    if (/==.+?==/.test(s)) return t.replace(/==(.+?)==/g, '<mark class="hl">$1</mark>');
-    const m = t.match(/^([^:]{2,70}):\s/);
-    return m ? `<mark class="hl">${m[1]}</mark>:${t.slice(m[0].length - 1)}` : t;
-  }
+  // key ideas are plain text; ==marks== left in the content are dropped, not highlighted
+  const highlight = s => esc(s).replace(/==(.+?)==/g, "$1");
   // An example line with its pronunciation, shown when the toggle is on
   function exampleHTML(item) {
     const x = Array.isArray(item) ? item[0] : item, note = Array.isArray(item) ? item[1] : "";
