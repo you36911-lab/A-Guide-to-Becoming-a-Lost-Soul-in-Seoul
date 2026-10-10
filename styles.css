@@ -548,9 +548,9 @@ body.splash-on { overflow: hidden; }
 .card-back { display: grid; gap: .4rem; justify-items: center; margin-top: .6rem; }
 .card-en { font-size: 1.15rem; }
 
-/* ───────── Quick notes ───────── */
+/* ───────── Quick notes & wordbook ───────── */
+.fab-stack { position: fixed; right: clamp(1rem, 3vw, 2rem); bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); z-index: 35; display: flex; gap: .5rem; }
 .notes-fab {
-  position: fixed; right: clamp(1rem, 3vw, 2rem); bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); z-index: 35;
   display: inline-flex; align-items: center; gap: .45rem; height: 46px; padding: 0 1.1rem 0 .95rem;
   border-radius: 999px; border: 1px solid var(--ink); background: var(--surface); color: var(--ink);
   font-weight: 600; font-size: .9rem; cursor: pointer; box-shadow: var(--shadow);
@@ -573,6 +573,61 @@ body.splash-on { overflow: hidden; }
 .np-list .note { padding: .7rem 0; }
 .np-list .note-t { font-size: .9rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .np-more { display: inline-flex; align-items: center; gap: .3rem; margin-top: .9rem; font-weight: 600; font-size: .88rem; text-decoration: none; }
+.np-form .input-ko, .wb-add .input-ko, .wb-edit .input-ko { padding: .6rem .85rem; font-size: .95rem; }
+.wp-preview { font-size: .82rem; color: var(--ink-2); line-height: 1.45; min-height: 0; }
+.wp-preview:empty { display: none; }
+.wp-preview [lang="ko"] { font-family: var(--ko); font-weight: 600; color: var(--ink); }
+.wp-tip { margin-top: .9rem; font-size: .8rem; color: var(--ink-2); line-height: 1.5; padding: .6rem .75rem; background: var(--accent-soft); border-radius: var(--r-s); }
+.wp-list li { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: baseline; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+.wp-list .sw { font-size: 1rem; }
+.wp-list .muted { font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* wordbook (Review) */
+.wb-stat { display: block; font-size: .8rem; color: var(--ink-2); margin-top: .15rem; }
+.wb-tip { display: flex; gap: .7rem; align-items: flex-start; padding: .85rem 1rem; margin-bottom: 1.1rem; background: var(--accent-soft); border-radius: var(--r-m); font-size: .9rem; line-height: 1.55; }
+.wb-tip-ico { color: var(--accent-ink); font-size: 1rem; line-height: 1.4; }
+.wb-add { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.3fr) auto; gap: .5rem; margin-bottom: 1.5rem; }
+.wb-add .wp-preview { grid-column: 1 / -1; }
+.wb-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-bottom: .6rem; }
+.wb-tools .note-search { margin: 0; flex: 1 1 14rem; }
+.wb-tools .filter { margin: 0; }
+.wb-sort { display: inline-flex; align-items: center; gap: .4rem; font-size: .82rem; color: var(--ink-2); }
+.wb-sort select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; padding: .35rem .7rem; }
+.wb-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.wb-item { padding: .95rem 0; border-bottom: 1px solid var(--line); display: grid; gap: .35rem; }
+.wb-none { padding: 1.5rem 0; }
+.wb-main { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem; }
+.wb-main .speak { margin-left: -.4rem; }
+.wb-en { flex: 1 1 12rem; color: var(--ink); }
+.wb-memo { font-weight: 600; }
+.wb-strength { display: inline-flex; gap: 3px; }
+.wb-strength i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.wb-strength i.on { background: var(--accent); }
+.wb-ex { font-family: var(--ko); font-size: .95rem; color: var(--ink-2); line-height: 1.6; padding-left: .75rem; border-left: 2px solid var(--line-strong); }
+.wb-ex mark { background: var(--accent-soft); color: var(--ink); border-radius: 3px; padding: 0 .1em; }
+.card-back .wb-ex { text-align: left; margin-top: .6rem; }
+.wb-edit { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.wb-edit .input-ko { flex: 1 1 14rem; }
+
+/* meaning on hover */
+.gloss-mark { position: fixed; z-index: 58; pointer-events: none; border-radius: 4px; background: rgba(228, 111, 134, .14); box-shadow: inset 0 -2px 0 var(--accent); }
+.gloss-tip {
+  position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none;
+  max-width: min(320px, calc(100vw - 16px)); padding: .6rem .85rem .55rem;
+  background: var(--ink); color: #fff; border-radius: 12px; box-shadow: 0 12px 32px rgba(42, 36, 34, .22);
+  font-size: .85rem; line-height: 1.45;
+  opacity: 0; visibility: hidden; transform: translateY(3px); transition: opacity .12s ease, transform .12s ease, visibility 0s linear .12s;
+}
+.gloss-tip.show { opacity: 1; visibility: visible; transform: none; transition: opacity .12s ease, transform .12s ease, visibility 0s; }
+.gt-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .55rem; }
+.gt-w { font-family: var(--ko); font-weight: 700; font-size: 1.1rem; }
+.gt-pos, .gt-from { font-size: .72rem; color: rgba(255, 255, 255, .65); }
+.gt-from [lang="ko"] { font-family: var(--ko); }
+.gt-def { margin-top: .2rem; }
+.gt-miss { color: rgba(255, 255, 255, .7); }
+.gt-defs { margin: .25rem 0 0; padding-left: 1.1rem; }
+.gt-foot { margin-top: .45rem; padding-top: .35rem; border-top: 1px solid rgba(255, 255, 255, .15); font-size: .72rem; color: rgba(255, 255, 255, .65); }
+.gt-foot.saved { color: #F6B3C1; }
 
 /* ───────── Drawer (placement, quizzes, flashcards, Hanja cards) ───────── */
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(42, 36, 34, .22); opacity: 0; transition: opacity .25s ease; }
@@ -650,7 +705,7 @@ body.splash-on { overflow: hidden; }
   .tab-ko { font-family: var(--ko); font-weight: 600; font-size: .95rem; }
   .tabbar a[aria-current="page"] { color: var(--accent-ink); }
   body { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
-  .notes-fab { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .fab-stack { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .notes-panel { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
   .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
   .dict-search { top: 58px; }
@@ -686,6 +741,8 @@ body.splash-on { overflow: hidden; }
   .intro-s { grid-column: 2; }
   .notes-fab span { display: none; }
   .notes-fab { width: 46px; padding: 0; justify-content: center; }
+  .wb-add { grid-template-columns: 1fr auto; }
+  .wb-add #wbIn { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

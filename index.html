@@ -186,7 +186,7 @@
       <header class="page-head">
         <p class="kicker" lang="ko">복습</p>
         <h1 class="display">Review</h1>
-        <p class="lede">Saved words come back just before you'd forget them. Questions you missed wait here until you get them right.</p>
+        <p class="lede">Your wordbook: saved words come back just before you'd forget them. Questions you missed wait here until you get them right.</p>
       </header>
       <div id="reviewBody"></div>
     </div>
@@ -249,12 +249,23 @@
   </button>
   <div class="guide" id="guide" hidden></div>
 
-  <!-- quick notes, available everywhere -->
-  <button class="notes-fab" id="notesFab" type="button" aria-expanded="false" aria-controls="notesPanel">
-    <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16H4v-3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-    <span>Note</span>
-  </button>
+  <!-- quick wordbook and notes, available everywhere -->
+  <div class="fab-stack">
+    <button class="notes-fab" id="wordsFab" type="button" aria-expanded="false" aria-controls="wordsPanel">
+      <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H15v12H5.5A1.5 1.5 0 0 0 4 16.5zM4 16.5A1.5 1.5 0 0 0 5.5 18H15v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.5 7h4.5M7.5 10h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>Words</span>
+    </button>
+    <button class="notes-fab" id="notesFab" type="button" aria-expanded="false" aria-controls="notesPanel">
+      <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16H4v-3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span>Note</span>
+    </button>
+  </div>
+  <aside class="notes-panel" id="wordsPanel" aria-label="Wordbook" hidden></aside>
   <aside class="notes-panel" id="notesPanel" aria-label="Quick notes" hidden></aside>
+
+  <!-- meaning on hover -->
+  <div class="gloss-mark" id="glossMark" aria-hidden="true" hidden></div>
+  <div class="gloss-tip" id="glossTip" aria-hidden="true"></div>
 
   <nav class="tabbar" aria-label="Main">
     <a href="#/" data-nav="journey"><span class="tab-ko" lang="ko">여정</span>Journey</a>
